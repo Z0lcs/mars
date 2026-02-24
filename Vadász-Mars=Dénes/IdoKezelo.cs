@@ -2,7 +2,7 @@
 
 namespace Vadász_Mars_Dénes
 {
-    
+
     public class IdoKezelo
     {
         public double teljesIdo { get; set; }
@@ -24,7 +24,7 @@ namespace Vadász_Mars_Dénes
         public string Statusz()
         {
             bool nappal = NappalVanE() ? true : false;
-            return $"Eltelt idő: {ElteltFelOra * 0.5 + 0.5} óra | Nappal van e? : {nappal}";
+            return $"Eltelt idő: {ElteltFelOra * 0.5} óra | Nappal van e? : {nappal}";
         }
     }
 }

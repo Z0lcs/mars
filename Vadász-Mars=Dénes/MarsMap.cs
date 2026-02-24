@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Drawing;
+﻿using System.Drawing;
 
 namespace Vadász_Mars_Dénes
 {
-
     public class MarsMap
     {
         public string[][] Grid { get; private set; } = new string[50][];
@@ -19,25 +13,21 @@ namespace Vadász_Mars_Dénes
 
         public void LoadFromFile(string path)
         {
-            using StreamReader sr = new(path);
-            int sor = 0;
-            while (!sr.EndOfStream && sor < 50)
+            string[] sorok = File.ReadAllLines(path);
+            for (int i = 0; i < 50; i++)
             {
-                string[] parts = sr.ReadLine().Split(',');
-                for (int oszlop = 0; oszlop < parts.Length; oszlop++)
+                string[] elemek = sorok[i].Split(',');
+                Grid[i] = elemek;
+                for (int j = 0; j < elemek.Length; j++)
                 {
-                    Point p = new Point(sor, oszlop);
-                    switch (parts[oszlop])
-                    {
-                        case "#": Akadalyok.Add(p); break;
-                        case "Y": RitkaArany.Add(p); break;
-                        case "B": Vizjeg.Add(p); break;
-                        case "G": RitkaAsvany.Add(p); break;
-                        case "S": KezdoPont = p; break;
-                    }
+                    Point p = new Point(j, i); // X = oszlop, Y = sor
+                    string ertek = elemek[j].Trim().ToUpper();
+                    if (ertek == "S") KezdoPont = p;
+                    else if (ertek == "#") Akadalyok.Add(p);
+                    else if (ertek == "Y") RitkaArany.Add(p);
+                    else if (ertek == "B") Vizjeg.Add(p);
+                    else if (ertek == "G") RitkaAsvany.Add(p);
                 }
-                Grid[sor] = parts;
-                sor++;
             }
         }
     }
