@@ -6,5 +6,6 @@ namespace Vadász_Mars_Dénes
     {
         public Brush Color { get; set; }
         public string Type { get; set; }
+        public string Coordinates { get; set; }
     }
 }

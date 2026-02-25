@@ -26,17 +26,19 @@ namespace Vadász_Mars_Dénes
                 Terkep.LoadFromFile(path);
 
                 List<MapCell> cells = new List<MapCell>();
-
+                string kordinata = "";
                 // Bejárjuk a 50x50-es rácsot
                 for (int i = 0; i < 50; i++)
                 {
                     for (int j = 0; j < 50; j++)
                     {
                         string jel = Terkep.Grid[i][j];
+                        kordinata = $"[{i};{j}]";
                         cells.Add(new MapCell
                         {
                             Color = GetColorBySign(jel),
-                            Type = GetNameBySign(jel)
+                            Type = GetNameBySign(jel),
+                            Coordinates = $"[{i};{j}]"
                         });
                     }
                 }
@@ -48,7 +50,9 @@ namespace Vadász_Mars_Dénes
                 StatText.Text = $"Arany (Y): {Terkep.RitkaArany.Count} | " +
                                $"Ásvány (G): {Terkep.RitkaAsvany.Count} | " +
                                $"Vízjég (B): {Terkep.Vizjeg.Count} | " +
-                               $"Akadály (#): {Terkep.Akadalyok.Count}";
+                               $"Akadály (#): {Terkep.Akadalyok.Count}" +
+                               $"Koordináta: {kordinata}"
+                               ;
             }
             catch (Exception ex)
             {

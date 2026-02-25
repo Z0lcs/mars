@@ -22,7 +22,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Rectangle Width="12" Height="12" Fill="{Binding Color}" 
-                                   ToolTip="{Binding Type}" Margin="0.2"/>
+                                   ToolTip="{Binding Coordinates}" Margin="0.2"/>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
