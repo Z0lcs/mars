@@ -3,28 +3,27 @@
 namespace Vadász_Mars_Dénes
 {
 
-    public class IdoKezelo
-    {
-        public double teljesIdo { get; set; }
-        public int ElteltFelOra { get; set; } = 0;
-        public bool FuthatMegAProgram => (ElteltFelOra * 0.5) < teljesIdo;
-        public IdoKezelo(double idotartam)
-        {
-            teljesIdo = idotartam;
-        }
+   public class IdoKezelo
+{
+    public int ElteltPerc { get; private set; } = 0;
+    public double MaxOra { get; set; }
+
+    public IdoKezelo(double idotartamOra) { MaxOra = idotartamOra; }
+
+    public bool FuthatMegAProgram => (ElteltPerc / 60.0) < MaxOra;
+
+    public void IdoUgras(int perc) { ElteltPerc += perc; }
+
         public bool NappalVanE()
         {
-            double aktualisOra = (ElteltFelOra * 0.5) % 24;
+            double aktualisOra = (ElteltPerc / 60.0) % 24;
             return aktualisOra < 16;
         }
-        public void Lepes()
-        {
-            ElteltFelOra++;
-        }
-        public string Statusz()
-        {
-            bool nappal = NappalVanE() ? true : false;
-            return $"Eltelt idő: {ElteltFelOra * 0.5} óra | Nappal van e? : {nappal}";
-        }
+
+    public string Statusz() 
+    {
+        double ora = ElteltPerc / 60.0;
+        return $"Idő: {ora:F1} óra | {(NappalVanE() ? "Nappal" : "Éjszaka")}";
     }
+}
 }
