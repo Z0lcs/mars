@@ -8,16 +8,14 @@ namespace Vadász_Mars_Dénes
 {
     internal class Program
     {
-        // Globális beállítások
         static int MaxOra = 72;
         static string LogPath = "rover_log.csv";
-
-        // Öntapadós vészjelző
+        static string PathLogPath = "rover_path.csv";
         static bool menekulesAktiv = false;
+        static int lepesSzamlalo = 0;
 
         static void Main(string[] args)
         {
-            // --- INICIALIZÁLÁS ---
             MarsMap terkep = new MarsMap();
             try { terkep.LoadFromFile("mars_map_50x50.csv"); }
             catch (Exception ex) { Console.WriteLine($"Hiba: {ex.Message}"); return; }
@@ -28,8 +26,8 @@ namespace Vadász_Mars_Dénes
             double osszesTavolsag = 0;
             int taktus = 0;
 
-            // --- FEJLÉC KIÍRÁSA ---
             File.WriteAllText(LogPath, "Taktus;Ido;Start_Poz;Cel_Poz;Akku;Sebesseg;Ossz_Tav;Asvanyok;Statusz;Napszak\n");
+            File.WriteAllText(PathLogPath, "Lépés szám;X;Y\n");
 
             Console.Clear();
             Console.WriteLine($"\n=== MARS ROVER: VÉGLEGES VERZIÓ ({MaxOra}h) ===\n");
@@ -37,7 +35,6 @@ namespace Vadász_Mars_Dénes
                 "Sorsz", "Idő", "Pozíció", "Akku", "Seb", "Státusz", "Ásvány"));
             Console.WriteLine(new string('-', 90));
 
-            // --- FŐ CIKLUS ---
             while (ido.FuthatMegAProgram && rover.Akkumulator > 0)
             {
                 taktus++;
@@ -48,8 +45,6 @@ namespace Vadász_Mars_Dénes
                 Point celpont = terkep.KezdoPont;
 
                 var asvanyok = GetAsvanyok(terkep);
-
-                // --- 1. VÉSZHELYZET LOGIKA ---
                 int tavBazisig = Tavolsag(rover.Pozicio, terkep.KezdoPont);
                 double hatralevoPerc = (ido.MaxOra * 60) - ido.ElteltPerc;
 
@@ -64,10 +59,8 @@ namespace Vadász_Mars_Dénes
 
                 if (rover.Pozicio == terkep.KezdoPont && menekulesAktiv && taktus > 1) break;
 
-                // --- DÖNTÉSHOZATAL ---
                 if (asvanyok.Any(a => a.X == rover.Pozicio.X && a.Y == rover.Pozicio.Y) && !menekulesAktiv)
                 {
-                    // BÁNYÁSZAT
                     aktualisStatusz = "Bányászat";
                     rover.OsszegyujtottAsvany++;
                     terkep.Vizjeg.RemoveAll(p => p.X == rover.Pozicio.X && p.Y == rover.Pozicio.Y);
@@ -83,21 +76,17 @@ namespace Vadász_Mars_Dénes
                 {
                     if (!menekulesAktiv)
                     {
-                        // GYŰJTÉS
                         celpont = ValasztCelpont(rover.Pozicio, asvanyok);
                         aktualisStatusz = "Haladás";
                     }
                     else
                     {
-                        // MENEKÜLÉS
                         celpont = terkep.KezdoPont;
                         aktualisStatusz = "VÉSZ-HAZATÉRÉS";
                     }
 
-                    // --- SEBESSÉG VÁLASZTÁS ---
                     sebessegMod = ValasztSebesseg(rover, celpont, nappal, menekulesAktiv);
 
-                    // --- MOZGÁS ---
                     double lepes = MozgasVegrehajtas(rover, celpont, sebessegMod, terkep);
 
                     if (lepes > 0) osszesTavolsag += lepes;
@@ -117,8 +106,6 @@ namespace Vadász_Mars_Dénes
             KiirEredmeny(rover, terkep, osszesTavolsag);
         }
 
-        // --- SEGÉDFÜGGVÉNYEK ---
-
         static Point ValasztCelpont(Point akt, List<Point> asvanyok)
         {
             var szomszed = asvanyok.FirstOrDefault(a => Tavolsag(a, akt) <= 1);
@@ -130,19 +117,16 @@ namespace Vadász_Mars_Dénes
                 return tav - (suruseg * 0.725);
             }).First();
         }
-
         static int ValasztSebesseg(Rover r, Point cel, bool nappal, bool vesz)
         {
             int maxSeb = 1;
 
             if (vesz)
             {
-                // Menekülésnél 35% felett sprintelhet
                 maxSeb = (r.Akkumulator > 35) ? 3 : 1;
             }
             else
             {
-                // Gyűjtésnél nappal és erős akkuval
                 if (nappal && r.Akkumulator > 40) maxSeb = 3;
                 else maxSeb = 1;
             }
@@ -162,13 +146,15 @@ namespace Vadász_Mars_Dénes
                 {
                     r.Pozicio = kov;
                     megtett++;
+
+                    lepesSzamlalo++;
+                    string pathSor = $"{lepesSzamlalo};{r.Pozicio.X};{r.Pozicio.Y}\n";
+                    File.AppendAllText(PathLogPath, pathSor);
                 }
             }
             return megtett;
         }
-
         static int Tavolsag(Point p1, Point p2) => Math.Max(Math.Abs(p1.X - p2.X), Math.Abs(p1.Y - p2.Y));
-
         static Point KeresLegjobbSzomszed(Point akt, Point cel, MarsMap m)
         {
             Point legjobb = akt;
@@ -188,21 +174,17 @@ namespace Vadász_Mars_Dénes
         }
 
         static List<Point> GetAsvanyok(MarsMap m) => m.Vizjeg.Concat(m.RitkaArany).Concat(m.RitkaAsvany).ToList();
-
-        // --- MEGJELENÍTÉS (ÓRA:PERC FORMÁTUMMAL) ---
-
         static void LogEsKiir(int taktus, IdoKezelo ido, Point s, Point v, int seb, string stat, bool nappal, Rover r, double tav)
         {
-            // Idő számítás Óra:Perc formátumra
             int ora = ido.ElteltPerc / 60;
             int perc = ido.ElteltPerc % 60;
-            string idoSzoveg = $"{ora:D2}:{perc:D2}"; // Pl: 12:30
+            string idoSzoveg = $"{ora:D2}:{perc:D2}";
 
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.Write($" #{taktus:D3}   | ");
 
             Console.ForegroundColor = nappal ? ConsoleColor.Yellow : ConsoleColor.Blue;
-            Console.Write($"[{idoSzoveg}] "); // Itt írjuk ki szépen
+            Console.Write($"[{idoSzoveg}] ");
             Console.ResetColor();
             Console.Write("| ");
 
@@ -228,7 +210,6 @@ namespace Vadász_Mars_Dénes
             Console.WriteLine($"{r.OsszegyujtottAsvany,2} db");
             Console.ResetColor();
 
-            // Log fájlba is az új formátummal
             string logSor = $"{taktus};{idoSzoveg};({s.X},{s.Y});({v.X},{v.Y});{Math.Round(r.Akkumulator)};{seb};{tav};{r.OsszegyujtottAsvany};{stat};{(nappal ? "Nappal" : "Ejszaka")}\n";
             File.AppendAllText(LogPath, logSor);
         }
