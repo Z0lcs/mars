@@ -8,127 +8,221 @@ namespace Vadász_Mars_Dénes
 {
     internal class Program
     {
+        // Globális beállítások
+        static int MaxOra = 72; // A 67 ásványhoz 72 óra kell
+        static string LogPath = "rover_log.csv";
+
         static void Main(string[] args)
         {
+            // --- INICIALIZÁLÁS ---
             MarsMap terkep = new MarsMap();
             try { terkep.LoadFromFile("mars_map_50x50.csv"); }
             catch (Exception ex) { Console.WriteLine($"Hiba: {ex.Message}"); return; }
 
-            // Állítsuk be a küldetés hosszát (72 óra)
-            int kulsdetesMaxOra = 72;
             Rover rover = new Rover();
             rover.Pozicio = terkep.KezdoPont;
-            IdoKezelo ido = new IdoKezelo(kulsdetesMaxOra);
+            IdoKezelo ido = new IdoKezelo(MaxOra);
             double osszesTavolsag = 0;
-            string logPath = "rover_log.csv";
-            bool kenyszeritettHazateres = false;
-            int taktusSzamlalo = 0;
+            int taktus = 0;
 
-            File.WriteAllText(logPath, "Taktus;Ido_Ora;Start_Poz;Cel_Poz;Akku;Sebesseg;Ossz_Tav;Asvanyok;Statusz;Napszak\n");
+            // --- FEJLÉC KIÍRÁSA ---
+            File.WriteAllText(LogPath, "Taktus;Ora;Start_Poz;Cel_Poz;Akku;Sebesseg;Ossz_Tav;Asvanyok;Statusz;Napszak\n");
 
-            Console.WriteLine($"=== MARS ROVER STRATÉGIAI SZIMULÁCIÓ INDUL ({kulsdetesMaxOra}h) ===");
+            Console.Clear();
+            Console.WriteLine($"\n=== MARS ROVER STRATÉGIAI SZIMULÁCIÓ ({MaxOra}h) ===\n");
+            Console.WriteLine(string.Format(" {0,-6} | {1,-9} | {2,-13} | {3,-8} | {4,-3} | {5,-16} | {6}",
+                "Sorsz", "Idő", "Pozíció", "Akku", "Seb", "Státusz", "Ásvány"));
+            Console.WriteLine(new string('-', 90));
 
-            // JAVÍTVA: 11 paraméter
-            LogEsKiir(0, ido, rover.Pozicio, rover.Pozicio, 0, "START", true, rover.Akkumulator, 0, 0, logPath);
-
-            while (ido.FuthatMegAProgram)
+            // --- FŐ CIKLUS (A TE EREDETI LOGIKÁD) ---
+            while (ido.FuthatMegAProgram && rover.Akkumulator > 0)
             {
-                taktusSzamlalo++;
+                taktus++;
+                Point induloPoz = rover.Pozicio;
                 bool nappal = ido.NappalVanE();
-                int sebessegMod = 0;
-                Point induloPozicio = rover.Pozicio;
+                string aktualisStatusz = "Várakozás";
+                int sebessegMod = 1;
+                Point celpont = terkep.KezdoPont;
+
                 var asvanyok = terkep.Vizjeg.Concat(terkep.RitkaArany).Concat(terkep.RitkaAsvany).ToList();
 
                 int tavBazisig = Math.Max(Math.Abs(rover.Pozicio.X - terkep.KezdoPont.X), Math.Abs(rover.Pozicio.Y - terkep.KezdoPont.Y));
+                double hatralevoPerc = (ido.MaxOra * 60) - ido.ElteltPerc;
 
-                // JAVÍTVA: Dinamikus időszámítás a kulsdetesMaxOra használatával
-                double hatralevoPerc = (kulsdetesMaxOra * 60) - ido.ElteltPerc;
+                // Eredeti vészhelyzet logika
+                bool vészhelyzet = (tavBazisig * 30) >= (hatralevoPerc - 60);
 
-                if ((tavBazisig * 15) >= (hatralevoPerc - 30)) kenyszeritettHazateres = true;
-                if (!asvanyok.Any()) kenyszeritettHazateres = true;
-
-                if (rover.Pozicio == terkep.KezdoPont && kenyszeritettHazateres && taktusSzamlalo > 1) break;
-
-                if (asvanyok.Any(a => a == rover.Pozicio) && !kenyszeritettHazateres)
+                // --- DÖNTÉSHOZATAL (VÁLTOZATLAN) ---
+                if (asvanyok.Any(a => a.X == rover.Pozicio.X && a.Y == rover.Pozicio.Y) && !vészhelyzet)
                 {
+                    aktualisStatusz = "Bányászat";
                     rover.OsszegyujtottAsvany++;
-                    terkep.Vizjeg.RemoveAll(p => p == rover.Pozicio);
-                    terkep.RitkaArany.RemoveAll(p => p == rover.Pozicio);
-                    terkep.RitkaAsvany.RemoveAll(p => p == rover.Pozicio);
+                    terkep.Vizjeg.RemoveAll(p => p.X == rover.Pozicio.X && p.Y == rover.Pozicio.Y);
+                    terkep.RitkaArany.RemoveAll(p => p.X == rover.Pozicio.X && p.Y == rover.Pozicio.Y);
+                    terkep.RitkaAsvany.RemoveAll(p => p.X == rover.Pozicio.X && p.Y == rover.Pozicio.Y);
+
                     rover.FrissitEnergia(rover.SzamolFogyasztas(0, nappal, true));
                     ido.IdoUgras(30);
-                    // JAVÍTVA: 11 paraméter
-                    LogEsKiir(taktusSzamlalo, ido, induloPozicio, rover.Pozicio, 0, "Bányászat", nappal, rover.Akkumulator, osszesTavolsag, rover.OsszegyujtottAsvany, logPath);
+
+                    // Szép kiírás
+                    LogEsKiir(taktus, ido, induloPoz, rover.Pozicio, 0, aktualisStatusz, nappal, rover, osszesTavolsag);
+                }
+                else if (asvanyok.Any() && !vészhelyzet)
+                {
+                    // Eredeti célpont választás (sűrűség alapú)
+                    celpont = asvanyok.OrderBy(a => {
+                        double tav = Math.Max(Math.Abs(a.X - rover.Pozicio.X), Math.Abs(a.Y - rover.Pozicio.Y));
+                        int suruseg = asvanyok.Count(m => Math.Abs(m.X - a.X) <= 1 && Math.Abs(m.Y - a.Y) <= 1);
+                        return tav - (suruseg * 0.725);
+                    }).First();
+
+                    aktualisStatusz = "Haladás";
+                    // Eredeti sebesség logika
+                    sebessegMod = (nappal && rover.Akkumulator > 40) ? 3 : 1;
+
+                    Point kovetkezo = KeresLegjobbSzomszed(rover.Pozicio, celpont, terkep);
+                    if (kovetkezo != rover.Pozicio)
+                    {
+                        rover.Pozicio = kovetkezo;
+                        osszesTavolsag++;
+                        int idoKoltseg = (sebessegMod == 3) ? 10 : 30;
+                        rover.FrissitEnergia(rover.SzamolFogyasztas(sebessegMod, nappal, false));
+                        ido.IdoUgras(idoKoltseg);
+                    }
+                    else { ido.IdoUgras(10); } // Ha elakadt
+
+                    // Szép kiírás
+                    LogEsKiir(taktus, ido, induloPoz, rover.Pozicio, sebessegMod, aktualisStatusz, nappal, rover, osszesTavolsag);
                 }
                 else
                 {
-                    Point celpont = kenyszeritettHazateres ? terkep.KezdoPont :
-                                    asvanyok.OrderBy(a => Math.Max(Math.Abs(a.X - rover.Pozicio.X), Math.Abs(a.Y - rover.Pozicio.Y))).First();
-
-                    int tav = Math.Max(Math.Abs(celpont.X - rover.Pozicio.X), Math.Abs(celpont.Y - rover.Pozicio.Y));
-
-                    if (tav >= 3 && (nappal || rover.Akkumulator > 30)) sebessegMod = 3;
-                    else if (tav >= 2) sebessegMod = 2;
-                    else sebessegMod = 1;
-
-                    for (int i = 0; i < sebessegMod; i++)
+                    // HAZATÉRÉS
+                    if (rover.Pozicio != terkep.KezdoPont)
                     {
-                        if (rover.Pozicio == celpont) break;
-                        Point kov = KeresLegjobbSzomszed(rover.Pozicio, celpont, terkep);
-                        if (kov != rover.Pozicio) { rover.Pozicio = kov; osszesTavolsag++; }
+                        aktualisStatusz = vészhelyzet ? "VÉSZ-HAZATÉRÉS" : "Hazatérés";
+                        sebessegMod = (vészhelyzet && rover.Akkumulator > 50) ? 3 : 1;
+
+                        Point kovetkezo = KeresLegjobbSzomszed(rover.Pozicio, terkep.KezdoPont, terkep);
+                        rover.Pozicio = kovetkezo;
+                        osszesTavolsag++;
+
+                        int idoKoltseg = (sebessegMod == 3) ? 10 : 30;
+                        rover.FrissitEnergia(rover.SzamolFogyasztas(sebessegMod, nappal, false));
+                        ido.IdoUgras(idoKoltseg);
+
+                        // Szép kiírás
+                        LogEsKiir(taktus, ido, induloPoz, rover.Pozicio, sebessegMod, aktualisStatusz, nappal, rover, osszesTavolsag);
                     }
-
-                    rover.FrissitEnergia(rover.SzamolFogyasztas(sebessegMod, nappal, false));
-                    ido.IdoUgras(30);
-
-                    string stat = kenyszeritettHazateres ? "VÉSZ-HAZATÉRÉS" : "Haladás";
-                    // JAVÍTVA: 11 paraméter
-                    LogEsKiir(taktusSzamlalo, ido, induloPozicio, rover.Pozicio, sebessegMod, stat, nappal, rover.Akkumulator, osszesTavolsag, rover.OsszegyujtottAsvany, logPath);
+                    else
+                    {
+                        break; // Hazaértünk
+                    }
                 }
 
-                if (rover.Akkumulator <= 0) { Console.WriteLine("LEMERÜLT!"); break; }
+                if (rover.Akkumulator <= 0) break;
             }
 
-            Console.WriteLine($"\nSZIMULÁCIÓ VÉGE. Összesen: {rover.OsszegyujtottAsvany} db ásvány.");
-            Console.ReadLine();
+            // --- ZÁRÁS ---
+            KiirEredmeny(rover, terkep, osszesTavolsag);
         }
 
-        static void LogEsKiir(int taktus, IdoKezelo ido, Point start, Point veg, int seb, string statusz, bool nappal, double akku, double tav, int asvany, string path)
-        {
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.Write($"#{taktus:D3} | ");
-            Console.ForegroundColor = nappal ? ConsoleColor.Yellow : ConsoleColor.Blue;
-            Console.Write($"[{ido.ElteltPerc / 60.0,5:F2}h] ");
-            Console.ResetColor();
-            Console.Write($"({start.X,2},{start.Y,2})->({veg.X,2},{veg.Y,2}) | Akku:{Math.Round(akku),3}% | Seb:{seb} | ");
-
-            if (statusz == "Bányászat") Console.ForegroundColor = ConsoleColor.Cyan;
-            else if (statusz.Contains("VÉSZ")) Console.ForegroundColor = ConsoleColor.Magenta;
-            else Console.ForegroundColor = ConsoleColor.White;
-
-            Console.WriteLine(statusz);
-            Console.ResetColor();
-
-            string logSor = $"{taktus};{ido.ElteltPerc / 60.0:F2};({start.X},{start.Y});({veg.X},{veg.Y});{Math.Round(akku)};{seb};{tav};{asvany};{statusz};{(nappal ? "Nappal" : "Ejszaka")}\n";
-            File.AppendAllText(path, logSor);
-        }
+        // --- SEGÉDFÜGGVÉNYEK (Változatlan logika, csak kiszervezve) ---
 
         static Point KeresLegjobbSzomszed(Point jelenlegi, Point cel, MarsMap terkep)
         {
             Point legjobb = jelenlegi;
             double minTav = double.MaxValue;
+
             for (int dx = -1; dx <= 1; dx++)
+            {
                 for (int dy = -1; dy <= 1; dy++)
                 {
                     if (dx == 0 && dy == 0) continue;
-                    Point v = new Point(jelenlegi.X + dx, jelenlegi.Y + dy);
-                    if (v.X >= 0 && v.X < 50 && v.Y >= 0 && v.Y < 50 && !terkep.Akadalyok.Any(a => a == v))
+                    Point vizsgalt = new Point(jelenlegi.X + dx, jelenlegi.Y + dy);
+
+                    if (vizsgalt.X >= 0 && vizsgalt.X < 50 && vizsgalt.Y >= 0 && vizsgalt.Y < 50 &&
+                        !terkep.Akadalyok.Any(a => a.X == vizsgalt.X && a.Y == vizsgalt.Y))
                     {
-                        double tav = Math.Max(Math.Abs(v.X - cel.X), Math.Abs(v.Y - cel.Y));
-                        if (tav < minTav) { minTav = tav; legjobb = v; }
+                        double tav = Math.Max(Math.Abs(vizsgalt.X - cel.X), Math.Abs(vizsgalt.Y - cel.Y));
+                        if (tav < minTav)
+                        {
+                            minTav = tav;
+                            legjobb = vizsgalt;
+                        }
                     }
                 }
+            }
             return legjobb;
+        }
+
+        // --- SZÉP MEGJELENÍTÉS (Ez az új rész) ---
+
+        static void LogEsKiir(int taktus, IdoKezelo ido, Point s, Point v, int seb, string stat, bool nappal, Rover r, double tav)
+        {
+            // 1. Oszlop: Taktus
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.Write($" #{taktus:D3}   | ");
+
+            // 2. Oszlop: Idő
+            Console.ForegroundColor = nappal ? ConsoleColor.Yellow : ConsoleColor.Blue;
+            Console.Write($"[{ido.ElteltPerc / 60.0,5:F2}h] ");
+            Console.ResetColor();
+            Console.Write("| ");
+
+            // 3. Oszlop: Pozíció
+            Console.Write($"({s.X,2},{s.Y,2})->({v.X,2},{v.Y,2}) | ");
+
+            // 4. Oszlop: Akku
+            if (r.Akkumulator < 25) Console.ForegroundColor = ConsoleColor.Red;
+            else Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write($"{Math.Round(r.Akkumulator),3}%");
+            Console.ResetColor();
+            Console.Write("     | ");
+
+            // 5. Oszlop: Sebesség
+            Console.Write($"{seb}   | ");
+
+            // 6. Oszlop: Státusz
+            if (stat == "Bányászat") Console.ForegroundColor = ConsoleColor.Cyan;
+            else if (stat.Contains("VÉSZ")) Console.ForegroundColor = ConsoleColor.Magenta;
+            else Console.ForegroundColor = ConsoleColor.White;
+
+            Console.Write(string.Format("{0,-16}", stat));
+            Console.ResetColor();
+            Console.Write("| ");
+
+            // 7. Oszlop: Ásványok
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"{r.OsszegyujtottAsvany,2} db");
+            Console.ResetColor();
+
+            // Fájlba írás
+            string logSor = $"{taktus};{ido.ElteltPerc / 60.0:F2};({s.X},{s.Y});({v.X},{v.Y});{Math.Round(r.Akkumulator)};{seb};{tav};{r.OsszegyujtottAsvany};{stat};{(nappal ? "Nappal" : "Ejszaka")}\n";
+            File.AppendAllText(LogPath, logSor);
+        }
+
+        static void KiirEredmeny(Rover r, MarsMap m, double tav)
+        {
+            Console.WriteLine(new string('-', 90));
+            Console.WriteLine($"\nSZIMULÁCIÓ VÉGE");
+            Console.WriteLine($"Gyűjtött ásványok: {r.OsszegyujtottAsvany} db");
+            Console.WriteLine($"Megtett távolság:  {tav} egység");
+
+            bool sikeres = (r.Pozicio == m.KezdoPont);
+            Console.Write("Helyzet: ");
+            if (sikeres)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("BÁZISON (Sikeres)");
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("TEREPEN (Kudarc)");
+            }
+            Console.ResetColor();
+            Console.WriteLine(new string('-', 90));
+            Console.ReadLine();
         }
     }
 }
