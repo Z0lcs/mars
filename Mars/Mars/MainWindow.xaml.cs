@@ -150,9 +150,8 @@ namespace Vadász_Mars_Dénes
 
                 osszesTavolsag += megtettEbbenATaktusban;
 
-                int idoKoltseg = (sebessegMod == 3) ? 10 : 30;
                 DénesRover.FrissitEnergia(DénesRover.SzamolFogyasztas(sebessegMod, nappal, false));
-                Ido.IdoUgras(idoKoltseg);
+                Ido.IdoUgras(30);
 
                 LogToFile(taktus, Ido, induloPoz, DénesRover.Pozicio, (int)megtettEbbenATaktusban, aktualisStatusz, nappal, DénesRover, osszesTavolsag);
             }

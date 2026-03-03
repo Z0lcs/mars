@@ -91,9 +91,8 @@ namespace Vadász_Mars_Dénes
 
                     if (lepes > 0) osszesTavolsag += lepes;
 
-                    int idoKoltseg = (sebessegMod == 3) ? 10 : 30;
                     rover.FrissitEnergia(rover.SzamolFogyasztas(sebessegMod, nappal, false));
-                    ido.IdoUgras(idoKoltseg);
+                    ido.IdoUgras(30);
 
                     int kiirtSebesseg = (lepes > 0) ? (int)lepes : sebessegMod;
 
