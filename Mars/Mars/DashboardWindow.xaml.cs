@@ -1,15 +1,24 @@
-﻿using System;
-using System.IO;
-using System.Windows;
-using System.Windows.Media;
-using LiveCharts;
-using LiveCharts.Wpf;
+﻿using LiveCharts;
 using LiveCharts.Defaults;
+using LiveCharts.Wpf;
+using System;
+using System.Collections.Generic;
 using System.Globalization;
-
-namespace MarsRoverDashboard
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.IO;
+namespace Mars
 {
-    public partial class MainWindow : Window
+    public partial class DashboardWindow : Window
     {
         public SeriesCollection AkkuSeries { get; set; }
         public SeriesCollection AsvanySeries { get; set; }
@@ -22,7 +31,7 @@ namespace MarsRoverDashboard
         public string[] TeljesitmenyLabels { get; set; }
         public Func<double, string> XFormatter { get; set; }
 
-        public MainWindow()
+        public DashboardWindow()
         {
             InitializeComponent();
 

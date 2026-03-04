@@ -17,21 +17,32 @@ namespace Vadász_Mars_Dénes
         private double osszesTavolsag = 0;
         private int taktus = 0;
         private bool menekulesAktiv = false;
+        private int lepesSzamlalo = 0;
 
-        public RoverVezerlo(MarsMap terkep, int maxOra, string logPath)
+        private int kezdetiVizjeg;
+        private int kezdetiArany;
+        private int kezdetiRitka;
+        private int kezdetiOsszes;
+
+        public RoverVezerlo(MarsMap terkep, int maxOra, string logPath, bool konzolraIr = true)
         {
             this.terkep = terkep;
             this.maxOra = maxOra;
             this.rover = new Rover { Pozicio = terkep.KezdoPont };
             this.ido = new IdoKezelo(maxOra);
 
-            this.kijelzo = new Megjelenito(logPath, maxOra);
+            this.kezdetiVizjeg = terkep.Vizjeg.Count;
+            this.kezdetiArany = terkep.RitkaArany.Count;
+            this.kezdetiRitka = terkep.RitkaAsvany.Count;
+            this.kezdetiOsszes = kezdetiVizjeg + kezdetiArany + kezdetiRitka;
+
+            this.kijelzo = new Megjelenito(logPath, maxOra, konzolraIr);
             File.WriteAllText(logPath, "Taktus;Ido;Start_Poz;Cel_Poz;Akku;Sebesseg;Ossz_Tav;Asvanyok;Statusz;Napszak\n");
         }
 
         public void SzimulacioInditasa()
         {
-            //kijelzo.ElsoSor();
+            kijelzo.ElsoSor();
 
             while (ido.FuthatMegAProgram && rover.Akkumulator > 0)
             {
@@ -50,7 +61,8 @@ namespace Vadász_Mars_Dénes
 
                 if (!menekulesAktiv)
                 {
-                    bool kellMenekulni = ((tavBazisig * 12.0) >= (hatralevoPerc - 60)) || (rover.Akkumulator < 30);
+                    //bool kellMenekulni = ((tavBazisig * 12.0) >= (hatralevoPerc - 60)) || (rover.Akkumulator < 30);
+                    bool kellMenekulni = ((tavBazisig * 11.0) >= (hatralevoPerc - 30)) || (rover.Akkumulator < 25);
                     if (kellMenekulni || !asvanyok.Any())
                     {
                         menekulesAktiv = true;
@@ -100,18 +112,36 @@ namespace Vadász_Mars_Dénes
 
                 if (rover.Akkumulator <= 0) break;
             }
+            int maradekVizjeg = terkep.Vizjeg.Count;
+            int maradekArany = terkep.RitkaArany.Count;
+            int maradekRitka = terkep.RitkaAsvany.Count;
 
-            //kijelzo.KiirEredmeny(rover, terkep, osszesTavolsag);
+            // 2. A különbség adja meg a begyűjtött mennyiséget fajtánként
+            int gyujtottVizjeg = kezdetiVizjeg - maradekVizjeg;
+            int gyujtottArany = kezdetiArany - maradekArany;
+            int gyujtottRitka = kezdetiRitka - maradekRitka;
+
+            // 3. Eredmény kiírása a konzolra
+            kijelzo.KiirEredmeny(rover, terkep, osszesTavolsag);
+
+            // 4. A 3. fájl (Összegzés) legenerálása
+            kijelzo.LogOsszegzes(ido.ElteltPerc, (ido.MaxOra * 60), osszesTavolsag,
+                                 gyujtottVizjeg, kezdetiVizjeg,
+                                 gyujtottArany, kezdetiArany,
+                                 gyujtottRitka, kezdetiRitka,
+                                 rover.OsszegyujtottAsvany, kezdetiOsszes);
+            kijelzo.KiirEredmeny(rover, terkep, osszesTavolsag);
         }
 
         // --- Belső logikai segédfüggvények ---
-
+            
         private Point ValasztCelpont(Point akt, List<Point> asvanyok)
         {
             var szomszed = asvanyok.FirstOrDefault(a => Tavolsag(a, akt) <= 1);
             if (szomszed != new Point(0, 0)) return szomszed;
 
-            return asvanyok.OrderBy(a => {
+            return asvanyok.OrderBy(a =>
+            {
                 double tav = Tavolsag(a, akt);
                 int suruseg = asvanyok.Count(m => Tavolsag(m, a) <= 2);
                 return tav - (suruseg * 0.725);
@@ -130,8 +160,8 @@ namespace Vadász_Mars_Dénes
             }
             else
             {
-                if (nappal && r.Akkumulator > 40) maxSeb = 3;
-                else if (r.Akkumulator > 20) maxSeb = 2;
+                if (nappal && r.Akkumulator > 30) maxSeb = 3;
+                else if (r.Akkumulator > 15) maxSeb = 2;
                 else maxSeb = 1;
             }
 
@@ -149,6 +179,9 @@ namespace Vadász_Mars_Dénes
                 {
                     rover.Pozicio = kov;
                     megtett++;
+
+                    lepesSzamlalo++;
+                    kijelzo.LogLepes(lepesSzamlalo, rover.Pozicio);
                 }
             }
             return megtett;

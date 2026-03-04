@@ -1,12 +1,13 @@
-﻿using System;
+﻿using Mars;
+using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks; // A késleltetett megjelenítéshez
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Drawing;
-using System.IO;
-using System.Threading.Tasks; // A késleltetett megjelenítéshez
 using Point = System.Drawing.Point;
 
 namespace Vadász_Mars_Dénes
@@ -272,6 +273,12 @@ namespace Vadász_Mars_Dénes
             "S" => "Start",
             _ => "Talaj"
         };
+        private void StatisztikaGomb_Click(object sender, RoutedEventArgs e)
+        {
+            // Figyelj rá, hogy a DashboardWindow az te projekted névterében legyen!
+            DashboardWindow statAblak = new DashboardWindow();
+            statAblak.ShowDialog();
+        }
     }
 
 }

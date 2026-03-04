@@ -8,14 +8,9 @@ namespace Vadász_Mars_Dénes
         {
             MarsMap terkep = new MarsMap();
             try { terkep.LoadFromFile("mars_map_50x50.csv"); }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Hiba a térkép betöltésekor: {ex.Message}");
-                Console.ReadLine();
-                return;
-            }
+            catch (Exception ex) { Console.WriteLine($"Hiba: {ex.Message}"); return; }
 
-            RoverVezerlo vezerlo = new RoverVezerlo(terkep, 72, "rover_log.csv");
+            RoverVezerlo vezerlo = new RoverVezerlo(terkep, 72, "rover_log.csv", false);
 
             vezerlo.SzimulacioInditasa();
         }
