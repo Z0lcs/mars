@@ -34,27 +34,6 @@ namespace Vadász_Mars_Dénes
         {
             InitializeComponent();
 
-
-            //MarsMap terkep = new MarsMap();
-            //try
-            //{
-            //    terkep.LoadFromFile("mars_map_50x50.csv");
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine($"Hiba a térkép betöltésekor: {ex.Message}");
-            //    Console.ReadLine();
-            //    return;
-            //}
-
-
-
-
-
-
-
-
-
             Terkep = new MarsMap();
             try { Terkep.LoadFromFile("mars_map_50x50.csv"); }
             catch (Exception ex) { MessageBox.Show($"Hiba: {ex.Message}"); }
