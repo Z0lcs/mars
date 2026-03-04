@@ -50,7 +50,8 @@ namespace Vadász_Mars_Dénes
 
                 if (!menekulesAktiv)
                 {
-                    bool kellMenekulni = ((tavBazisig * 12.0) >= (hatralevoPerc - 60)) || (rover.Akkumulator < 30);
+                    //bool kellMenekulni = ((tavBazisig * 12.0) >= (hatralevoPerc - 60)) || (rover.Akkumulator < 30);
+                    bool kellMenekulni = ((tavBazisig * 11.0) >= (hatralevoPerc - 30)) || (rover.Akkumulator < 25);
                     if (kellMenekulni || !asvanyok.Any())
                     {
                         menekulesAktiv = true;
@@ -130,8 +131,8 @@ namespace Vadász_Mars_Dénes
             }
             else
             {
-                if (nappal && r.Akkumulator > 40) maxSeb = 3;
-                else if (r.Akkumulator > 20) maxSeb = 2;
+                if (nappal && r.Akkumulator > 30) maxSeb = 3;
+                else if (r.Akkumulator > 15) maxSeb = 2;
                 else maxSeb = 1;
             }
 

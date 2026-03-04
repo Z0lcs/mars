@@ -7,10 +7,7 @@ namespace Vadász_Mars_Dénes
         static void Main(string[] args)
         {
             MarsMap terkep = new MarsMap();
-            try
-            {
-                terkep.LoadFromFile("mars_map_50x50.csv");
-            }
+            try { terkep.LoadFromFile("mars_map_50x50.csv"); }
             catch (Exception ex)
             {
                 Console.WriteLine($"Hiba a térkép betöltésekor: {ex.Message}");
