@@ -34,6 +34,27 @@ namespace Vadász_Mars_Dénes
         {
             InitializeComponent();
 
+
+            //MarsMap terkep = new MarsMap();
+            //try
+            //{
+            //    terkep.LoadFromFile("mars_map_50x50.csv");
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine($"Hiba a térkép betöltésekor: {ex.Message}");
+            //    Console.ReadLine();
+            //    return;
+            //}
+
+
+
+
+
+
+
+
+
             Terkep = new MarsMap();
             try { Terkep.LoadFromFile("mars_map_50x50.csv"); }
             catch (Exception ex) { MessageBox.Show($"Hiba: {ex.Message}"); }
@@ -47,6 +68,16 @@ namespace Vadász_Mars_Dénes
             // Fájlok inicializálása
             File.WriteAllText(LogPath, "Taktus;Ido;Start_Poz;Cel_Poz;Akku;Sebesseg;Ossz_Tav;Asvanyok;Statusz;Napszak\n");
             File.WriteAllText(PathLogPath, "Lépés szám;X;Y\n");
+
+
+
+
+            RoverVezerlo vezerlo = new RoverVezerlo(Terkep, 72, "rover_log.csv");
+
+            vezerlo.SzimulacioInditasa();
+
+
+
 
             FrissitMegjelenites();
             this.KeyDown += MainWindow_KeyDown;
