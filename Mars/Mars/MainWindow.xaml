@@ -31,7 +31,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Rectangle Width="12" Height="12" Fill="{Binding Color}" 
+                        <Rectangle Width="30" Height="30" Fill="{Binding Color}" 
                                    ToolTip="{Binding Coordinates}" Margin="0.2"/>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
