@@ -1,19 +1,54 @@
 ﻿<Window x:Class="Vadász_Mars_Dénes.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Mars Vadász - Rover Térkép" Height="750" Width="700" Background="#2C2C2C">
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf" 
+        Title="Mars Vadász - Rover Térkép &amp; Dashboard" Height="900" Width="1400" Background="#2C2C2C">
+
+    <Window.Resources>
+        <Style TargetType="Border" x:Key="CardStyle">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#A0AAB5" BlurRadius="10" ShadowDepth="2" Opacity="0.3"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="TextBlock" x:Key="TitleStyle">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="#2C3E50"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+    </Window.Resources>
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="650"/>
+        </Grid.ColumnDefinitions>
 
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-            <TextBlock x:Name="StatText" Text="Térkép betöltése..." Foreground="White" FontSize="16" FontWeight="Bold"/>
-        </StackPanel>
+        <Grid Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" x:Name="StatText" Text="Térkép betöltése..." 
+                       Foreground="White" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Content="Statisztika Frissítése 🔄" Click="StatisztikaGomb_Click" 
+                    Background="#3498DB" Foreground="White" FontWeight="Bold" Padding="15,5" 
+                    BorderThickness="0" Cursor="Hand" VerticalAlignment="Center"/>
+        </Grid>
 
-        <Border Grid.Row="1" BorderBrush="#555" BorderThickness="2" CornerRadius="3">
-            <ItemsControl x:Name="MapDisplay">
+        <Border Grid.Row="1" Grid.Column="0" BorderBrush="#555" BorderThickness="2" CornerRadius="3" Margin="5,5,40,10" Grid.RowSpan="2">
+            <ItemsControl x:Name="MapDisplay" Margin="0,0,-2,-2">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <UniformGrid Rows="50" Columns="50"/>
@@ -21,11 +56,95 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Rectangle Width="12" Height="12" Fill="{Binding Color}" 
-                                   ToolTip="{Binding Coordinates}" Margin="0.2"/>
+                        <Rectangle Width="20" Height="20" Fill="{Binding Color}" 
+                                   ToolTip="{Binding Coordinates}" Margin="0.1"/>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </Border>
+
+        <ScrollViewer Grid.Row="1" Grid.RowSpan="2" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="5">
+
+                <UniformGrid Columns="2">
+                    <Border Style="{StaticResource CardStyle}" Height="200">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="20*"/>
+                                <ColumnDefinition Width="261*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Akku Szint (%)" Style="{StaticResource TitleStyle}" Grid.ColumnSpan="2"/>
+                            <lvc:CartesianChart Grid.Row="1" Series="{Binding AkkuSeries}" LegendLocation="None" Grid.ColumnSpan="2">
+                                <lvc:CartesianChart.AxisY>
+                                    <lvc:Axis MinValue="0" MaxValue="100"/>
+                                </lvc:CartesianChart.AxisY>
+                            </lvc:CartesianChart>
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource CardStyle}" Height="200">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Ásványgyűjtés (db)" Style="{StaticResource TitleStyle}"/>
+                            <lvc:CartesianChart Grid.Row="1" Series="{Binding AsvanySeries}" LegendLocation="None"/>
+                        </Grid>
+                    </Border>
+                </UniformGrid>
+
+                <Border Style="{StaticResource CardStyle}" Height="220">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Taktus Felosztás" Style="{StaticResource TitleStyle}"/>
+                        <lvc:PieChart Grid.Row="1" Series="{Binding StatuszSeries}" LegendLocation="Bottom" InnerRadius="40"/>
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource CardStyle}" Height="180">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Sebesség Profil" Style="{StaticResource TitleStyle}"/>
+                        <lvc:CartesianChart Grid.Row="1" Series="{Binding SebessegSeries}"/>
+                    </Grid>
+                </Border>
+
+                <UniformGrid Columns="2">
+                    <Border Style="{StaticResource CardStyle}" Height="180">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Nappal vs Éjjel" Style="{StaticResource TitleStyle}"/>
+                            <lvc:CartesianChart Grid.Row="1" Series="{Binding NapszakSeries}" LegendLocation="Bottom"/>
+                        </Grid>
+                    </Border>
+
+                    <Border Style="{StaticResource CardStyle}" Height="180">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Sikeresség" Style="{StaticResource TitleStyle}"/>
+                            <lvc:CartesianChart Grid.Row="1" Series="{Binding TeljesitmenySeries}"/>
+                        </Grid>
+                    </Border>
+                </UniformGrid>
+
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Window>

@@ -1,18 +1,27 @@
-﻿using System.Threading.Channels;
+﻿using System;
 
 namespace Vadász_Mars_Dénes
 {
+    public class IdoKezelo
+    {
+        public int ElteltPerc { get; private set; } = 0;
 
-   public class IdoKezelo
-{
-    public int ElteltPerc { get; private set; } = 0;
-    public double MaxOra { get; set; }
+        private double _maxOra;
 
-    public IdoKezelo(double idotartamOra) { MaxOra = idotartamOra; }
+        public double MaxOra
+        {
+            get { return _maxOra; }
+            set { _maxOra = Math.Max(24.0, value); }
+        }
 
-    public bool FuthatMegAProgram => (ElteltPerc / 60.0) < MaxOra;
+        public IdoKezelo(double idotartamOra)
+        {
+            MaxOra = idotartamOra;
+        }
 
-    public void IdoUgras(int perc) { ElteltPerc += perc; }
+        public bool FuthatMegAProgram => (ElteltPerc / 60.0) < MaxOra;
+
+        public void IdoUgras(int perc) { ElteltPerc += perc; }
 
         public bool NappalVanE()
         {
@@ -20,10 +29,10 @@ namespace Vadász_Mars_Dénes
             return aktualisOra < 16;
         }
 
-    public string Statusz() 
-    {
-        double ora = ElteltPerc / 60.0;
-        return $"Idő: {ora:F1} óra | {(NappalVanE() ? "Nappal" : "Éjszaka")}";
+        public string Statusz()
+        {
+            double ora = ElteltPerc / 60.0;
+            return $"Idő: {ora:F1} óra | {(NappalVanE() ? "Nappal" : "Éjszaka")}";
+        }
     }
-}
 }
