@@ -18,21 +18,6 @@ using Point = System.Drawing.Point;
 
 namespace Vadász_Mars_Dénes
 {
-    public class MapCell : INotifyPropertyChanged
-    {
-        private ImageSource _imageSource;
-        public ImageSource ImageSource
-        {
-            get => _imageSource;
-            set { _imageSource = value; OnPropertyChanged(nameof(ImageSource)); }
-        }
-        public string Coordinates { get; set; }
-        public string Type { get; set; }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-    }
-
     public partial class MainWindow : Window
     {
         public ObservableCollection<MapCell> MapCells { get; set; } = new ObservableCollection<MapCell>();
@@ -79,7 +64,7 @@ namespace Vadász_Mars_Dénes
                 try
                 {
                     var img = new BitmapImage(new Uri(path));
-                    img.Freeze(); // Memória optimalizálás
+                    img.Freeze();
                     ImageCache[path] = img;
                 }
                 catch { return null; }
@@ -96,7 +81,8 @@ namespace Vadász_Mars_Dénes
                     {
                         ImageSource = GetImageForSign(Terkep.Grid[i][j], i, j),
                         Coordinates = $"[{i};{j}]",
-                        Type = Terkep.Grid[i][j]
+                        Type = Terkep.Grid[i][j],
+                        HasVisited = false // Kezdetben senki sem járt sehol
                     });
             MapDisplay.ItemsSource = MapCells;
         }
@@ -141,13 +127,19 @@ namespace Vadász_Mars_Dénes
                     for (int i = 0; i < seb && aktualisUtvonalIndex < utvonalPontok.Count; i++)
                     {
                         Point regi = DénesRover.Pozicio;
+
+                        // Nyomvonal rögzítése a régi ponton
+                        int regiIndex = regi.X * 50 + regi.Y;
+                        if (regiIndex >= 0 && regiIndex < MapCells.Count)
+                            MapCells[regiIndex].HasVisited = true;
+
                         DénesRover.Pozicio = utvonalPontok[aktualisUtvonalIndex++];
                         FrissitCella(regi.X, regi.Y);
                         FrissitCella(DénesRover.Pozicio.X, DénesRover.Pozicio.Y);
-                        await Task.Delay(20); // Simább mozgás
+                        await Task.Delay(200);
                     }
                 }
-                StatText.Text = $"Idő: {sor[1]} | Akku: {sor[4]}% | Státusz: {sor[8]}";
+                StatText.Text = $"Idő: {sor[1]} | Akku: {sor[4]}% | Státusz: {sor[8]} | Távolság:{sor[6]} | Ásványok:{sor[7]}";
                 aktualisLogIndex++;
                 folyamatban = false;
             }

@@ -38,10 +38,15 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" x:Name="StatText" Text="Térkép betöltése..." 
                        Foreground="White" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Content="Statisztika Dashboard 📊" Click="StatisztikaGomb_Click" 
+
+            <CheckBox Grid.Column="1" x:Name="TrailToggle" Content="Nyomvonal 👣" IsChecked="True" 
+                      Foreground="White" VerticalAlignment="Center" Margin="0,0,15,0" FontWeight="Bold"/>
+
+            <Button Grid.Column="2" Content="Statisztika Dashboard 📊" Click="StatisztikaGomb_Click" 
                     Background="#3498DB" Foreground="White" FontWeight="Bold" Padding="15,5" 
                     BorderThickness="0" Cursor="Hand" VerticalAlignment="Center"/>
         </Grid>
@@ -55,12 +60,31 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Image Source="{Binding ImageSource, Mode=OneWay}" 
-                   Width="17" Height="17" 
-                   ToolTip="{Binding Coordinates}" 
-                   Stretch="UniformToFill" Margin="0.1">
-                            <RenderOptions.BitmapScalingMode>LowQuality</RenderOptions.BitmapScalingMode>
-                        </Image>
+                        <Grid Margin="0.1">
+                            <Image Source="{Binding ImageSource, Mode=OneWay}" 
+                                   Width="17" Height="17" 
+                                   ToolTip="{Binding Coordinates}" 
+                                   Stretch="UniformToFill">
+                                <RenderOptions.BitmapScalingMode>LowQuality</RenderOptions.BitmapScalingMode>
+                            </Image>
+
+                            <Ellipse Fill="Red" Width="5" Height="5" Opacity="0.5" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding HasVisited}" Value="True"/>
+                                                    <Condition Binding="{Binding ElementName=TrailToggle, Path=IsChecked}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                        </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -114,28 +138,6 @@
                         <lvc:CartesianChart Grid.Row="1" Series="{Binding SebessegSeries}"/>
                     </Grid>
                 </Border>
-                <UniformGrid Columns="2">
-                    <Border Style="{StaticResource CardStyle}" Height="180">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <TextBlock Text="Nappal vs Éjjel" Style="{StaticResource TitleStyle}"/>
-                            <lvc:CartesianChart Grid.Row="1" Series="{Binding NapszakSeries}" LegendLocation="Bottom"/>
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource CardStyle}" Height="180">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <TextBlock Text="Sikeresség" Style="{StaticResource TitleStyle}"/>
-                            <lvc:CartesianChart Grid.Row="1" Series="{Binding TeljesitmenySeries}"/>
-                        </Grid>
-                    </Border>
-                </UniformGrid>
             </StackPanel>
         </ScrollViewer>
     </Grid>
