@@ -28,7 +28,6 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -42,13 +41,13 @@
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" x:Name="StatText" Text="Térkép betöltése..." 
                        Foreground="White" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Content="Statisztika Frissítése 🔄" Click="StatisztikaGomb_Click" 
+            <Button Grid.Column="1" Content="Statisztika Dashboard 📊" Click="StatisztikaGomb_Click" 
                     Background="#3498DB" Foreground="White" FontWeight="Bold" Padding="15,5" 
                     BorderThickness="0" Cursor="Hand" VerticalAlignment="Center"/>
         </Grid>
 
-        <Border Grid.Row="1" Grid.Column="0" BorderBrush="#555" BorderThickness="2" CornerRadius="3" Margin="5,5,40,10" Grid.RowSpan="2">
-            <ItemsControl x:Name="MapDisplay" Margin="0,0,-2,-2">
+        <Border Grid.Row="1" Grid.Column="0" BorderBrush="#555" BorderThickness="2" CornerRadius="3" Margin="5">
+            <ItemsControl x:Name="MapDisplay">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <UniformGrid Rows="50" Columns="50"/>
@@ -56,36 +55,34 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Rectangle Width="20" Height="20" Fill="{Binding Color}" 
-                                   ToolTip="{Binding Coordinates}" Margin="0.1"/>
+                        <Image Source="{Binding ImageSource, Mode=OneWay}" 
+                   Width="17" Height="17" 
+                   ToolTip="{Binding Coordinates}" 
+                   Stretch="UniformToFill" Margin="0.1">
+                            <RenderOptions.BitmapScalingMode>LowQuality</RenderOptions.BitmapScalingMode>
+                        </Image>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </Border>
 
-        <ScrollViewer Grid.Row="1" Grid.RowSpan="2" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="5">
-
                 <UniformGrid Columns="2">
                     <Border Style="{StaticResource CardStyle}" Height="200">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="20*"/>
-                                <ColumnDefinition Width="261*"/>
-                            </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <TextBlock Text="Akku Szint (%)" Style="{StaticResource TitleStyle}" Grid.ColumnSpan="2"/>
-                            <lvc:CartesianChart Grid.Row="1" Series="{Binding AkkuSeries}" LegendLocation="None" Grid.ColumnSpan="2">
+                            <TextBlock Text="Akku Szint (%)" Style="{StaticResource TitleStyle}"/>
+                            <lvc:CartesianChart Grid.Row="1" Series="{Binding AkkuSeries}" LegendLocation="None">
                                 <lvc:CartesianChart.AxisY>
                                     <lvc:Axis MinValue="0" MaxValue="100"/>
                                 </lvc:CartesianChart.AxisY>
                             </lvc:CartesianChart>
                         </Grid>
                     </Border>
-
                     <Border Style="{StaticResource CardStyle}" Height="200">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -97,7 +94,6 @@
                         </Grid>
                     </Border>
                 </UniformGrid>
-
                 <Border Style="{StaticResource CardStyle}" Height="220">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -108,7 +104,6 @@
                         <lvc:PieChart Grid.Row="1" Series="{Binding StatuszSeries}" LegendLocation="Bottom" InnerRadius="40"/>
                     </Grid>
                 </Border>
-
                 <Border Style="{StaticResource CardStyle}" Height="180">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -119,7 +114,6 @@
                         <lvc:CartesianChart Grid.Row="1" Series="{Binding SebessegSeries}"/>
                     </Grid>
                 </Border>
-
                 <UniformGrid Columns="2">
                     <Border Style="{StaticResource CardStyle}" Height="180">
                         <Grid>
@@ -131,7 +125,6 @@
                             <lvc:CartesianChart Grid.Row="1" Series="{Binding NapszakSeries}" LegendLocation="Bottom"/>
                         </Grid>
                     </Border>
-
                     <Border Style="{StaticResource CardStyle}" Height="180">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -143,7 +136,6 @@
                         </Grid>
                     </Border>
                 </UniformGrid>
-
             </StackPanel>
         </ScrollViewer>
     </Grid>

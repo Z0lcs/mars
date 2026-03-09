@@ -9,7 +9,37 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="képek\Brit.png" />
+    <None Remove="képek\Nyíl.jpg" />
+    <None Remove="képek\ritkaarany_talajon.png" />
+    <None Remove="képek\ritkaasvany_talajon.png" />
+    <None Remove="képek\talaj.png" />
+    <None Remove="képek\vízjég_talajon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="LiveCharts.Wpf" Version="0.9.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="képek\Brit.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="képek\Nyíl.jpg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="képek\ritkaarany_talajon.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="képek\ritkaasvany_talajon.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="képek\talaj.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="képek\vízjég_talajon.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>
