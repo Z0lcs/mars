@@ -7,8 +7,8 @@ namespace Vadász_Mars_Dénes
     public class Megjelenito
     {
         private readonly string logPath;
-        private readonly string pathFile = "rover_path.csv";
-        private readonly string summaryFile = "rover_summary.csv";
+        private readonly string pathFile;    
+        private readonly string summaryFile; 
         private readonly int maxOra;
         public bool KonzolraIr { get; set; }
 
@@ -18,13 +18,24 @@ namespace Vadász_Mars_Dénes
             this.maxOra = maxOra;
             this.KonzolraIr = konzolraIr;
 
+            string mappa = Path.GetDirectoryName(logPath);
+            if (string.IsNullOrEmpty(mappa))
+            {
+                mappa = AppDomain.CurrentDomain.BaseDirectory;
+            }
+
+            this.pathFile = Path.Combine(mappa, "rover_path.csv");
+            this.summaryFile = Path.Combine(mappa, "rover_summary.csv");
+
             File.WriteAllText(pathFile, "Lépés szám;X;Y\n");
         }
+
         public void LogLepes(int lepesSzam, Point p)
         {
             string pathSor = $"{lepesSzam};{p.X};{p.Y}\n";
             File.AppendAllText(pathFile, pathSor);
         }
+
         public void ElsoSor()
         {
             if (KonzolraIr)
@@ -36,6 +47,7 @@ namespace Vadász_Mars_Dénes
                 Console.WriteLine(new string('-', 85));
             }
         }
+
         public void LogEsKiir(int taktus, IdoKezelo ido, Point s, Point v, int seb, string stat, bool nappal, Rover r, double tav)
         {
             int ora = ido.ElteltPerc / 60;
@@ -78,6 +90,7 @@ namespace Vadász_Mars_Dénes
             string logSor = $"{taktus};{idoSzoveg};({s.X},{s.Y});({v.X},{v.Y});{Math.Round(r.Akkumulator)};{seb};{tav};{r.OsszegyujtottAsvany};{stat};{(nappal ? "Nappal" : "Ejszaka")}\n";
             File.AppendAllText(logPath, logSor);
         }
+
         public void KiirEredmeny(Rover r, MarsMap m, double tav)
         {
             if (KonzolraIr)
@@ -104,11 +117,12 @@ namespace Vadász_Mars_Dénes
                 Console.ReadLine();
             }
         }
+
         public void LogOsszegzes(int elteltPerc, double maxPerc, double megtettTav,
-    int gyVizjeg, int osszVizjeg,
-    int gyArany, int osszArany,
-    int gyRitka, int osszRitka,
-    int gyOsszes, int kezdetiOsszes)
+            int gyVizjeg, int osszVizjeg,
+            int gyArany, int osszArany,
+            int gyRitka, int osszRitka,
+            int gyOsszes, int kezdetiOsszes)
         {
             string fejlec = "ElteltPerc;MaxPerc;MegtettTavolsag;GyujtottVizjeg;OsszVizjeg;GyujtottArany;OsszArany;GyujtottRitka;OsszRitka;GyujtottOsszes;KezdetiOsszes\n";
 

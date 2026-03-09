@@ -2,143 +2,227 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf" 
-        Title="Mars Vadász - Rover Térkép &amp; Dashboard" Height="900" Width="1400" Background="#2C2C2C">
+        Title="Mars Vadász - Rover Térkép &amp; Dashboard" Height="900" Width="1400" Background="#1E1E1E">
 
     <Window.Resources>
         <Style TargetType="Border" x:Key="CardStyle">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="CornerRadius" Value="12"/>
-            <Setter Property="Padding" Value="10"/>
-            <Setter Property="Margin" Value="5"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="MinHeight" Value="240"/>
             <Setter Property="Effect">
                 <Setter.Value>
-                    <DropShadowEffect Color="#A0AAB5" BlurRadius="10" ShadowDepth="2" Opacity="0.3"/>
+                    <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="3" Opacity="0.2"/>
                 </Setter.Value>
             </Setter>
         </Style>
         <Style TargetType="TextBlock" x:Key="TitleStyle">
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="15"/>
             <Setter Property="Foreground" Value="#2C3E50"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
     </Window.Resources>
 
-    <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <Grid Margin="15">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="650"/>
+            <ColumnDefinition Width="4*"/>
+            <ColumnDefinition Width="6*"/>
         </Grid.ColumnDefinitions>
 
-        <Grid Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" x:Name="StatText" Text="Térkép betöltése..." 
-                       Foreground="White" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+        <Grid Grid.Column="0" Margin="0,0,10,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-            <CheckBox Grid.Column="1" x:Name="TrailToggle" Content="Nyomvonal 👣" IsChecked="True" 
-                      Foreground="White" VerticalAlignment="Center" Margin="0,0,15,0" FontWeight="Bold"/>
+            <Grid Grid.Row="0" Margin="0,0,0,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="StatText" Text="Térkép betöltése..." Foreground="#E0E0E0" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                <Button Grid.Column="1" x:Name="AutoPlayGomb" Content="▶ Lejátszás" Click="AutoPlay_Click" 
+                        Background="#27AE60" Foreground="White" FontWeight="Bold" Padding="15,8" 
+                        BorderThickness="0" Cursor="Hand" Visibility="Collapsed" Margin="10,0,0,0">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="5"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
+            </Grid>
 
-            <Button Grid.Column="2" Content="Statisztika Dashboard 📊" Click="StatisztikaGomb_Click" 
-                    Background="#3498DB" Foreground="White" FontWeight="Bold" Padding="15,5" 
-                    BorderThickness="0" Cursor="Hand" VerticalAlignment="Center"/>
+            <CheckBox Grid.Row="1" x:Name="TrailToggle" Content="Nyomvonal megjelenítése 👣" IsChecked="True" 
+                      Foreground="#BDC3C7" VerticalAlignment="Center" Margin="0,0,0,10" FontSize="14"/>
+
+            <Border Grid.Row="2" BorderBrush="#34495E" BorderThickness="3" CornerRadius="5" Background="#000000">
+                <ItemsControl x:Name="MapDisplay">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Rows="50" Columns="50"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0.1">
+                                <Image Source="{Binding ImageSource, Mode=OneWay}" ToolTip="{Binding Coordinates}" Stretch="UniformToFill">
+                                    <RenderOptions.BitmapScalingMode>LowQuality</RenderOptions.BitmapScalingMode>
+                                </Image>
+                                <Ellipse Fill="#E74C3C" Width="4" Height="4" Opacity="0.8" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding HasVisited}" Value="True"/>
+                                                        <Condition Binding="{Binding ElementName=TrailToggle, Path=IsChecked}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
         </Grid>
 
-        <Border Grid.Row="1" Grid.Column="0" BorderBrush="#555" BorderThickness="2" CornerRadius="3" Margin="5">
-            <ItemsControl x:Name="MapDisplay">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <UniformGrid Rows="50" Columns="50"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Grid Margin="0.1">
-                            <Image Source="{Binding ImageSource, Mode=OneWay}" 
-                                   Width="17" Height="17" 
-                                   ToolTip="{Binding Coordinates}" 
-                                   Stretch="UniformToFill">
-                                <RenderOptions.BitmapScalingMode>LowQuality</RenderOptions.BitmapScalingMode>
-                            </Image>
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                            <Ellipse Fill="Red" Width="5" Height="5" Opacity="0.5" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <Ellipse.Style>
-                                    <Style TargetType="Ellipse">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                        <Style.Triggers>
-                                            <MultiDataTrigger>
-                                                <MultiDataTrigger.Conditions>
-                                                    <Condition Binding="{Binding HasVisited}" Value="True"/>
-                                                    <Condition Binding="{Binding ElementName=TrailToggle, Path=IsChecked}" Value="True"/>
-                                                </MultiDataTrigger.Conditions>
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                            </MultiDataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Ellipse.Style>
-                            </Ellipse>
-                        </Grid>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </Border>
-
-        <ScrollViewer Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="5">
-                <UniformGrid Columns="2">
-                    <Border Style="{StaticResource CardStyle}" Height="200">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <TextBlock Text="Akku Szint (%)" Style="{StaticResource TitleStyle}"/>
-                            <lvc:CartesianChart Grid.Row="1" Series="{Binding AkkuSeries}" LegendLocation="None">
-                                <lvc:CartesianChart.AxisY>
-                                    <lvc:Axis MinValue="0" MaxValue="100"/>
-                                </lvc:CartesianChart.AxisY>
-                            </lvc:CartesianChart>
-                        </Grid>
-                    </Border>
-                    <Border Style="{StaticResource CardStyle}" Height="200">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <TextBlock Text="Ásványgyűjtés (db)" Style="{StaticResource TitleStyle}"/>
-                            <lvc:CartesianChart Grid.Row="1" Series="{Binding AsvanySeries}" LegendLocation="None"/>
-                        </Grid>
-                    </Border>
-                </UniformGrid>
-                <Border Style="{StaticResource CardStyle}" Height="220">
+                <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource CardStyle}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Taktus Felosztás" Style="{StaticResource TitleStyle}"/>
-                        <lvc:PieChart Grid.Row="1" Series="{Binding StatuszSeries}" LegendLocation="Bottom" InnerRadius="40"/>
+                        <TextBlock Text="Akkumulátor Szint (%)" Style="{StaticResource TitleStyle}"/>
+                        <lvc:CartesianChart Grid.Row="1" Series="{Binding AkkuSeries}" LegendLocation="None">
+                            <lvc:CartesianChart.AxisX>
+                                <lvc:Axis LabelFormatter="{Binding XFormatter}">
+                                    <lvc:Axis.Separator>
+                                        <lvc:Separator Step="5" StrokeThickness="0.5" Stroke="#E0E0E0"/>
+                                    </lvc:Axis.Separator>
+                                </lvc:Axis>
+                            </lvc:CartesianChart.AxisX>
+                            <lvc:CartesianChart.AxisY>
+                                <lvc:Axis MinValue="0" MaxValue="100"/>
+                            </lvc:CartesianChart.AxisY>
+                        </lvc:CartesianChart>
                     </Grid>
                 </Border>
-                <Border Style="{StaticResource CardStyle}" Height="180">
+
+                <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource CardStyle}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Sebesség Profil" Style="{StaticResource TitleStyle}"/>
-                        <lvc:CartesianChart Grid.Row="1" Series="{Binding SebessegSeries}"/>
+                        <TextBlock Text="Összegyűjtött Ásványok (db)" Style="{StaticResource TitleStyle}"/>
+                        <lvc:CartesianChart Grid.Row="1" Series="{Binding AsvanySeries}" LegendLocation="None">
+                            <lvc:CartesianChart.AxisX>
+                                <lvc:Axis LabelFormatter="{Binding XFormatter}">
+                                    <lvc:Axis.Separator>
+                                        <lvc:Separator Step="5" StrokeThickness="0.5" Stroke="#E0E0E0"/>
+                                    </lvc:Axis.Separator>
+                                </lvc:Axis>
+                            </lvc:CartesianChart.AxisX>
+                            <lvc:CartesianChart.AxisY>
+                                <lvc:Axis MinValue="0"/>
+                            </lvc:CartesianChart.AxisY>
+                        </lvc:CartesianChart>
                     </Grid>
                 </Border>
-            </StackPanel>
+
+                <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Sebességfokozatok Használata" Style="{StaticResource TitleStyle}"/>
+                        <lvc:CartesianChart Grid.Row="1" Series="{Binding SebessegSeries}">
+                            <lvc:CartesianChart.AxisX>
+                                <lvc:Axis Title="Fokozat" Labels="{Binding SebessegLabels}"/>
+                            </lvc:CartesianChart.AxisX>
+                        </lvc:CartesianChart>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Bányászat Napszakonként" Style="{StaticResource TitleStyle}"/>
+                        <lvc:CartesianChart Grid.Row="1" Series="{Binding NapszakSeries}" LegendLocation="Bottom" DataTooltip="{x:Null}">
+                            <lvc:CartesianChart.SeriesColors>
+                                <lvc:ColorsCollection>
+                                    <Color>#F39C12</Color>
+                                    <Color>#2C3E50</Color>
+                                </lvc:ColorsCollection>
+                            </lvc:CartesianChart.SeriesColors>
+                            <lvc:CartesianChart.AxisX>
+                                <lvc:Axis ShowLabels="False"/>
+                            </lvc:CartesianChart.AxisX>
+                        </lvc:CartesianChart>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Begyűjtött vs Hátrahagyott" Style="{StaticResource TitleStyle}"/>
+                        <lvc:CartesianChart Grid.Row="1" Series="{Binding TeljesitmenySeries}" LegendLocation="Top" DataTooltip="{x:Null}">
+                            <lvc:CartesianChart.SeriesColors>
+                                <lvc:ColorsCollection>
+                                    <Color>#1ABC9C</Color>
+                                    <Color>#D2D7D3</Color>
+                                </lvc:ColorsCollection>
+                            </lvc:CartesianChart.SeriesColors>
+                            <lvc:CartesianChart.AxisY>
+                                <lvc:Axis Labels="{Binding TeljesitmenyLabels}"/>
+                            </lvc:CartesianChart.AxisY>
+                            <lvc:CartesianChart.AxisX>
+                                <lvc:Axis MinValue="0"/>
+                            </lvc:CartesianChart.AxisX>
+                        </lvc:CartesianChart>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource CardStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="Tevékenységek Megoszlása" Style="{StaticResource TitleStyle}"/>
+                        <lvc:PieChart Grid.Row="1" Series="{Binding StatuszSeries}" LegendLocation="Bottom" InnerRadius="50"/>
+                    </Grid>
+                </Border>
+
+            </Grid>
         </ScrollViewer>
     </Grid>
 </Window>
