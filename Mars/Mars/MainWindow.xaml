@@ -28,8 +28,8 @@
 
     <Grid Margin="15">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="4*"/>
-            <ColumnDefinition Width="6*"/>
+            <ColumnDefinition Width="783*"/>
+            <ColumnDefinition Width="587*"/>
         </Grid.ColumnDefinitions>
 
         <Grid Grid.Column="0" Margin="0,0,10,0">
@@ -68,8 +68,8 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Grid Margin="0.1">
-                                <Image Source="{Binding ImageSource, Mode=OneWay}" ToolTip="{Binding Coordinates}" Stretch="UniformToFill">
+                            <Grid Margin="0.1" >
+                                <Image Source="{Binding ImageSource, Mode=OneWay}" ToolTip="{Binding Coordinates}" Stretch="Uniform">
                                     <RenderOptions.BitmapScalingMode>LowQuality</RenderOptions.BitmapScalingMode>
                                 </Image>
                                 <Ellipse Fill="#E74C3C" Width="4" Height="4" Opacity="0.8" VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -95,7 +95,7 @@
             </Border>
         </Grid>
 
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0" Margin="39,48,0,-48">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"/>
