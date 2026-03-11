@@ -295,10 +295,10 @@ namespace Vadász_Mars_Dénes
                 SebessegSeries.Clear();
                 SebessegSeries.Add(new ColumnSeries { Title = "Gyakoriság", Values = sebessegVals, DataLabels = true, LabelPoint = p => p.Y.ToString() });
 
-                NapszakSeries.Clear();
+                NapszakSeries.Clear();  
                 NapszakSeries.Add(new StackedColumnSeries { Title = "Nappal", Values = nBanyVals, DataLabels = true, LabelPoint = p => p.Y > 0 ? p.Y.ToString() : ""});
                 NapszakSeries.Add(new StackedColumnSeries { Title = "Éjjel", Values = eBanyVals, DataLabels = true, LabelPoint = p => p.Y > 0 ? p.Y.ToString() : ""});
-
+                    
                 string sumFajl = Path.Combine(mappa, "rover_summary.csv");
                 if (File.Exists(sumFajl))
                 {
@@ -315,17 +315,12 @@ namespace Vadász_Mars_Dénes
                         maradtVals.Clear(); maradtVals.AddRange(new int[] { oV, oA, oR });
 
                         TeljesitmenySeries.Clear();
-                        TeljesitmenySeries.Add(new RowSeries { Title = "Sikeres", Values = sikeresVals, DataLabels = true, LabelPoint = p => p.X.ToString()});
-                        TeljesitmenySeries.Add(new RowSeries { Title = "Veszteség", Values = maradtVals, DataLabels = true, LabelPoint = p => p.X.ToString()});
+                        TeljesitmenySeries.Add(new RowSeries { Title = "Begyűjtött", Values = sikeresVals, DataLabels = true, LabelPoint = p => p.X.ToString()});
+                        TeljesitmenySeries.Add(new RowSeries { Title = "Maradék", Values = maradtVals, DataLabels = true, LabelPoint = p => p.X.ToString()});
                     }
                 }
             }
             catch (Exception ex) { MessageBox.Show("Hiba a dashboard előkészítésekor: " + ex.Message); }
-        }
-
-        private void CartesianChart_Loaded(object sender, RoutedEventArgs e)
-        {
-
         }
     }
 }
