@@ -61,8 +61,8 @@ namespace Vadász_Mars_Dénes
 
                 if (!menekulesAktiv)
                 {
-                    //bool kellMenekulni = ((tavBazisig * 12.0) >= (hatralevoPerc - 60)) || (rover.Akkumulator < 30);
-                    bool kellMenekulni = ((tavBazisig * 11.0) >= (hatralevoPerc - 30)) || (rover.Akkumulator < 25);
+                    double biztonsagiAkku = Math.Max(12.0, (tavBazisig * 0.7) + 8.0);
+                    bool kellMenekulni = ((tavBazisig * 12.0) >= (hatralevoPerc - 60)) || (rover.Akkumulator < biztonsagiAkku); //30
                     if (kellMenekulni || !asvanyok.Any())
                     {
                         menekulesAktiv = true;
@@ -116,15 +116,12 @@ namespace Vadász_Mars_Dénes
             int maradekArany = terkep.RitkaArany.Count;
             int maradekRitka = terkep.RitkaAsvany.Count;
 
-            // 2. A különbség adja meg a begyűjtött mennyiséget fajtánként
             int gyujtottVizjeg = kezdetiVizjeg - maradekVizjeg;
             int gyujtottArany = kezdetiArany - maradekArany;
             int gyujtottRitka = kezdetiRitka - maradekRitka;
 
-            // 3. Eredmény kiírása a konzolra
             kijelzo.KiirEredmeny(rover, terkep, osszesTavolsag);
 
-            // 4. A 3. fájl (Összegzés) legenerálása
             kijelzo.LogOsszegzes(ido.ElteltPerc, (ido.MaxOra * 60), osszesTavolsag,
                                  gyujtottVizjeg, kezdetiVizjeg,
                                  gyujtottArany, kezdetiArany,
@@ -134,7 +131,7 @@ namespace Vadász_Mars_Dénes
         }
 
         // --- Belső logikai segédfüggvények ---
-            
+
         private Point ValasztCelpont(Point akt, List<Point> asvanyok)
         {
             var szomszed = asvanyok.FirstOrDefault(a => Tavolsag(a, akt) <= 1);
@@ -147,6 +144,7 @@ namespace Vadász_Mars_Dénes
                 return tav - (suruseg * 0.725);
             }).First();
         }
+
 
         private int ValasztSebesseg(Rover r, Point cel, bool nappal, bool vesz)
         {
