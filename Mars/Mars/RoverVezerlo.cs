@@ -282,34 +282,32 @@ namespace Vadász_Mars_Dénes
         {
             if (!elerhetoAsvanyok.Any()) return terkep.KezdoPont;
 
-            // 1. PORSZÍVÓ SZABÁLY: Ha nagyon közel van (<= 2 lépés), azt azonnal felveszi!
-            var kozeli = elerhetoAsvanyok.Where(a => tavMatrix[a.X, a.Y] <= 2).ToList();
-            if (kozeli.Any())
+            // 1. VÁKUUM-MÓD: 3 lépésen belül nincs matek, csak takarítás!
+            // Ez menti meg a 24/48 órás eredményeket.
+            var kornyezet = elerhetoAsvanyok.Where(a => tavMatrix[a.X, a.Y] <= 3).ToList();
+            if (kornyezet.Any())
             {
-                return kozeli.OrderByDescending(a => elerhetoAsvanyok.Count(m => Tavolsag(m, a) <= 3))
-                             .ThenBy(a => tavMatrix[a.X, a.Y])
-                             .First();
+                // A legközelebbit vigye, hogy ne ugráljon.
+                return kornyezet.OrderBy(a => tavMatrix[a.X, a.Y]).First();
             }
 
-            // 2. KINTRŐL-BEFELÉ STRATÉGIA (Kiegyensúlyozva!)
-            double idorugalmassag = (double)ido.ElteltPerc / (maxOra * 60.0);
+            double progress = (double)ido.ElteltPerc / (maxOra * 60.0);
 
-            // Finomított vonzás: -4.0 (Eltaszít) -> +4.0 (Vonz)
-            // Ez már nem nyomja el a sűrűség értékét, de elég ahhoz, hogy kintről induljon!
-            double bazisVonzas = -4.0 + (idorugalmassag * 8.0);
+            // 2. TÁVOLSÁGI STRATÉGIA
+            // A hazaút-kényszert (progress) négyzetre emeljük, hogy az elején ne zavarjon be,
+            // de a végén (90% után) brutálisan hazarántsa a rovert.
+            double hazaHuzas = Math.Pow(progress, 3) * 25.0;
 
             return elerhetoAsvanyok.OrderBy(a =>
             {
                 double tavAktol = tavMatrix[a.X, a.Y];
                 double tavBazistol = tavolsagokBazistol[a.X, a.Y];
-
-                // Megnézi, hány ásvány van a célpont körül 3 lépéses körzetben
                 int suruseg = elerhetoAsvanyok.Count(m => Tavolsag(m, a) <= 3);
 
-                // Uj Képlet: 
-                // A távolság büntetése mérsékelt (6.0).
-                // A sűrűség JUTALMA hatalmas (8.0)! Így imádni fogja a nagy kupacokat.
-                return (tavAktol * 6.0) - (suruseg * 8.0) + (tavBazistol * bazisVonzas);
+                // EGYENSÚLY: 
+                // - A távolság-büntetés (5.0) erős, hogy ne kóboroljon el feleslegesen.
+                // - A sűrűség-bónusz (10.0) segít megtalálni a zsírosabb foltokat.
+                return (tavAktol * 5.0) - (suruseg * 10.0) + (tavBazistol * hazaHuzas);
             }).First();
         }
 
