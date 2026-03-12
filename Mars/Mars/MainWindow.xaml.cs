@@ -174,7 +174,7 @@ namespace Vadász_Mars_Dénes
                 while (autoLejatszas && aktualisLogIndex < szimulaciosLog.Count)
                 {
                     await EgyLepesMegtetele();
-                    await Task.Delay(500); 
+                    await Task.Delay(100); 
                 }
 
                 if (aktualisLogIndex >= szimulaciosLog.Count)

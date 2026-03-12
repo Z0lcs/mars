@@ -55,14 +55,14 @@ namespace Vadász_Mars_Dénes
 
                 var asvanyok = GetAsvanyok();
 
-                // --- VÉSZHELYZET VIZSGÁLATA ---
+                // --- VÉSZHELYZET VIZSGÁLATA (A te eredeti, biztonságos logikád) ---
                 int tavBazisig = Tavolsag(rover.Pozicio, terkep.KezdoPont);
                 double hatralevoPerc = (maxOra * 60) - ido.ElteltPerc;
+                double biztonsagiAkku = Math.Max(12.0, (tavBazisig * 0.7) + 8.0);
 
                 if (!menekulesAktiv)
                 {
-                    double biztonsagiAkku = Math.Max(12.0, (tavBazisig * 0.7) + 8.0);
-                    bool kellMenekulni = ((tavBazisig * 12.0) >= (hatralevoPerc - 60)) || (rover.Akkumulator < biztonsagiAkku); //30
+                    bool kellMenekulni = ((tavBazisig * 12.0) >= (hatralevoPerc - 60)) || (rover.Akkumulator < biztonsagiAkku);
                     if (kellMenekulni || !asvanyok.Any())
                     {
                         menekulesAktiv = true;
@@ -71,8 +71,14 @@ namespace Vadász_Mars_Dénes
 
                 if (rover.Pozicio == terkep.KezdoPont && menekulesAktiv && taktus > 1) break;
 
+                // --- ÚJÍTÁS: Biztonságos Drive-Thru Bányászat ---
+                // Megengedjük neki, hogy hazafelé is felszedje az ásványt, HA van legalább 90 perc és +5 akku tartaléka!
+                bool tudBanyaszniVeszhelyzetben = menekulesAktiv &&
+                                                  (rover.Akkumulator > biztonsagiAkku + 5.0) &&
+                                                  (hatralevoPerc > (tavBazisig * 12.0) + 90.0);
+
                 // --- DÖNTÉSHOZATAL ---
-                if (asvanyok.Any(a => a.X == rover.Pozicio.X && a.Y == rover.Pozicio.Y) && !menekulesAktiv)
+                if (asvanyok.Any(a => a.X == rover.Pozicio.X && a.Y == rover.Pozicio.Y) && (!menekulesAktiv || tudBanyaszniVeszhelyzetben))
                 {
                     aktualisStatusz = "Bányászat";
                     rover.OsszegyujtottAsvany++;
@@ -134,17 +140,24 @@ namespace Vadász_Mars_Dénes
 
         private Point ValasztCelpont(Point akt, List<Point> asvanyok)
         {
-            var szomszed = asvanyok.FirstOrDefault(a => Tavolsag(a, akt) <= 1);
-            if (szomszed != new Point(0, 0)) return szomszed;
+            var szomszedok = asvanyok.Where(a => Tavolsag(a, akt) <= 1).ToList();
+            if (szomszedok.Any())
+            {
+                return szomszedok.OrderBy(a => Tavolsag(a, terkep.KezdoPont)).First();
+            }
 
             return asvanyok.OrderBy(a =>
             {
-                double tav = Tavolsag(a, akt);
+                double tavAktol = Tavolsag(a, akt);
                 int suruseg = asvanyok.Count(m => Tavolsag(m, a) <= 2);
-                return tav - (suruseg * 0.725);
+
+                // A te eredeti nyertes képleted:
+                double pontszam = tavAktol - (suruseg * 0.725);
+
+                // ÚJÍTÁS: Egy leheletnyi húzás a bázis felé (holtversenyek eldöntésére)
+                return pontszam + (Tavolsag(a, terkep.KezdoPont) * 0.005);
             }).First();
         }
-
 
         private int ValasztSebesseg(Rover r, Point cel, bool nappal, bool vesz)
         {
