@@ -206,51 +206,56 @@ namespace Vadász_Mars_Dénes
 
         private async Task EgyLepesMegtetele()
         {
-            // Megakadályozzuk a párhuzamos futást és ellenőrizzük, van-e még mit lejátszani
             if (folyamatban || aktualisLogIndex >= szimulaciosLog.Count) return;
             folyamatban = true;
 
             var sor = szimulaciosLog[aktualisLogIndex];
-            int seb = int.Parse(sor[5]); // A log-ban tárolt sebesség (hány blokkot ugrik egy óra alatt)
+            int seb = int.Parse(sor[5]);
+            string napszak = sor.Length > 9 ? sor[9].Trim() : "Nappal";
+
+            // --- NAPSZAK VIZUÁLIS JELZÉSE ---
+            if (napszak == "Nappal")
+            {
+                NapszakIndikator.Fill = Brushes.Yellow;
+                NapszakSzoveg.Text = "☀️ NAPPAL";
+                NapszakSzoveg.Foreground = Brushes.Yellow;
+            }
+            else
+            {
+                NapszakIndikator.Fill = Brushes.DarkBlue;
+                NapszakSzoveg.Text = "🌙 ÉJJEL";
+                NapszakSzoveg.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A9CCE3"));
+            }
 
             if (sor[8] == "Bányászat")
             {
-                // BÁNYÁSZAT LOGIKA
                 string banyaszottTipus = Terkep.Grid[DénesRover.Pozicio.X][DénesRover.Pozicio.Y];
 
                 if (banyaszottTipus == "B") { sikeresVals[0]++; maradtVals[0]--; }
                 else if (banyaszottTipus == "Y") { sikeresVals[1]++; maradtVals[1]--; }
                 else if (banyaszottTipus == "G" || banyaszottTipus == "#") { sikeresVals[2]++; maradtVals[2]--; }
 
-                // Talaj frissítése üresre bányászat után
                 Terkep.Grid[DénesRover.Pozicio.X][DénesRover.Pozicio.Y] = ".";
                 FrissitCella(DénesRover.Pozicio.X, DénesRover.Pozicio.Y);
             }
             else
             {
-                // MOZGÁS LOGIKA
                 for (int i = 0; i < seb && aktualisUtvonalIndex < utvonalPontok.Count; i++)
                 {
                     Point regi = DénesRover.Pozicio;
                     int regiIndex = regi.X * 50 + regi.Y;
-
                     if (regiIndex >= 0 && regiIndex < MapCells.Count)
                         MapCells[regiIndex].HasVisited = true;
 
-                    // Új pozíció beállítása az útvonal alapján
                     DénesRover.Pozicio = utvonalPontok[aktualisUtvonalIndex++];
-
-                    // Grafikus frissítés
                     FrissitCella(regi.X, regi.Y);
                     FrissitCella(DénesRover.Pozicio.X, DénesRover.Pozicio.Y);
 
-                    // DINAMIKUS KÉSLELTETÉS: 
-                    // Az alap 500ms-ot osztjuk a csúszka értékével (0.5x - 5.0x)
+                    // Dinamikus késleltetés a robot mozgásához (Alap: 500ms)
                     await Task.Delay((int)(500 / speedSlider.Value));
                 }
             }
 
-            // --- DASHBOARD ADATOK FRISSÍTÉSE ---
             double oraVal = 0;
             if (sor[1].Contains(":"))
             {
@@ -264,7 +269,6 @@ namespace Vadász_Mars_Dénes
             if (seb >= 1 && seb <= 3) sebessegVals[seb - 1]++;
 
             string statusz = sor[8];
-            string napszak = sor.Length > 9 ? sor[9].Trim() : "";
 
             if (statusz == "Bányászat")
             {
@@ -274,7 +278,6 @@ namespace Vadász_Mars_Dénes
             else if (statusz.Contains("Haladás")) haladasVal[0]++;
             else hazaVal[0]++;
 
-            // Szöveges státusz frissítése
             if (StatText != null)
                 StatText.Text = $"Idő: {sor[1]} | Akku: {sor[4]}% | Státusz: {sor[8]} \nTávolság: {sor[6]} blokk  | Ásványok: {sor[7]}db";
 

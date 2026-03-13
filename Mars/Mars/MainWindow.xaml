@@ -33,7 +33,6 @@
             <Setter Property="Foreground" Value="#ffffff"/>
         </Style>
         <Style TargetType="lvc:Separator">
-
             <Setter Property="Stroke" Value="#333333"/>
         </Style>
     </Window.Resources>
@@ -57,17 +56,18 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="StatText" Text="Térkép betöltése..." Foreground="#E0E0E0" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="10">
-                    <TextBlock Text="{Binding ElementName=speedSlider, Path=Value, StringFormat='Sebesség: {0:F1}x'}" 
-               Foreground="White" HorizontalAlignment="Center" FontSize="14" FontWeight="Bold"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="400,13,0,7">
+                    <Ellipse x:Name="NapszakIndikator" Width="20" Height="20" Fill="Yellow" Margin="0,0,10,0">
+                        <Ellipse.Effect>
+                            <DropShadowEffect x:Name="IndikatorFeny" Color="Orange" BlurRadius="15" ShadowDepth="0"/>
+                        </Ellipse.Effect>
+                    </Ellipse>
 
-                    <Slider x:Name="speedSlider" 
-            Minimum="0.5" 
-            Maximum="5.0" 
-            Value="1.0" 
-            TickFrequency="0.5" 
-            IsSnapToTickEnabled="True"
-            Width="200" Margin="5"/>
+                    <TextBlock x:Name="NapszakSzoveg" Text="NAPPAL" Foreground="Yellow" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="10">
+                    <TextBlock Text="{Binding ElementName=speedSlider, Path=Value, StringFormat='Sebesség: {0:F1}x'}" Foreground="White" HorizontalAlignment="Center" FontSize="14" FontWeight="Bold"/>
+                    <Slider x:Name="speedSlider" Minimum="0.5" Maximum="5.0" Value="1.0" TickFrequency="0.5" IsSnapToTickEnabled="True" Width="200" Margin="5"/>
                 </StackPanel>
                 <Button Grid.Column="1" x:Name="AutoPlayGomb" Content="▶ Lejátszás" Click="AutoPlay_Click" 
                         Background="#27AE60" Foreground="White" FontWeight="Bold" Padding="15,8" BorderThickness="0" Cursor="Hand" Visibility="Collapsed"/>
