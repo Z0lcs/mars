@@ -210,7 +210,7 @@ namespace Vadász_Mars_Dénes
                                                   (rover.Akkumulator > biztonsagiAkku + 2.0) &&
                                                   (hatralevoPerc > szuksegesIdo + 30.0);
 
-                // --- DÖNTÉSHOZATAL ---
+
                 if (asvanyok.Any(a => a.X == rover.Pozicio.X && a.Y == rover.Pozicio.Y) && (!menekulesAktiv || tudBanyaszniVeszhelyzetben))
                 {
                     aktualisStatusz = "Bányászat";
@@ -268,23 +268,20 @@ namespace Vadász_Mars_Dénes
         {
             if (!elerhetoAsvanyok.Any()) return terkep.KezdoPont;
 
-            var kornyezet = elerhetoAsvanyok.Where(a => tavMatrix[a.X, a.Y] <= 3).ToList();
-            if (kornyezet.Any())
-            {
-                return kornyezet.OrderBy(a => tavMatrix[a.X, a.Y]).First();
-            }
-
             double progress = (double)ido.ElteltPerc / (maxOra * 60.0);
-
-            double hazaHuzas = Math.Pow(progress, 3) * 25.0;
 
             return elerhetoAsvanyok.OrderBy(a =>
             {
-                double tavAktol = tavMatrix[a.X, a.Y];
-                double tavBazistol = tavolsagokBazistol[a.X, a.Y];
-                int suruseg = elerhetoAsvanyok.Count(m => Tavolsag(m, a) <= 3);
+                int tavAktol = tavMatrix[a.X, a.Y];
+                int tavBazistol = tavolsagokBazistol[a.X, a.Y];
 
-                return (tavAktol * 5.0) - (suruseg * 10.0) + (tavBazistol * hazaHuzas);
+                double tavolsagSuly = Math.Pow(tavAktol, 1.5);
+                int kornyezoAsvanyok = elerhetoAsvanyok.Count(m =>
+                    Math.Max(Math.Abs(m.X - a.X), Math.Abs(m.Y - a.Y)) <= 5);
+                double surusegBonusz = kornyezoAsvanyok * 1.25;
+
+                double hazaHuzas = tavBazistol * Math.Pow(progress, 2);
+                return tavolsagSuly + hazaHuzas - surusegBonusz;
             }).First();
         }
 
