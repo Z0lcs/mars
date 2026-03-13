@@ -65,7 +65,7 @@
 
                     <TextBlock x:Name="NapszakSzoveg" Text="NAPPAL" Foreground="Yellow" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
                 </StackPanel>
-                <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Margin="10">
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Left" Margin="674,13,0,7">
                     <TextBlock Text="{Binding ElementName=speedSlider, Path=Value, StringFormat='Sebesség: {0:F1}x'}" Foreground="White" HorizontalAlignment="Center" FontSize="14" FontWeight="Bold"/>
                     <Slider x:Name="speedSlider" Minimum="0.5" Maximum="5.0" Value="1.0" TickFrequency="0.5" IsSnapToTickEnabled="True" Width="200" Margin="5"/>
                 </StackPanel>
@@ -87,7 +87,7 @@
                             <DataTemplate>
                                 <Grid Margin="0.1">
                                     <Image Source="{Binding ImageSource, Mode=OneWay}" ToolTip="{Binding Coordinates}" Stretch="Uniform"/>
-                                    <Ellipse Fill="#E74C3C" Width="4" Height="4" Opacity="0.8" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <Ellipse Fill="#FF0000" Width="4" Height="4" Opacity="0.8" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <Ellipse.Style>
                                             <Style TargetType="Ellipse">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
