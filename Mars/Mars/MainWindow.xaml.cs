@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -80,39 +81,38 @@ namespace Vadász_Mars_Dénes
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            SetupWindow beallitasok = new SetupWindow();
-
-            if (beallitasok.ShowDialog() == true)
+            string settingsFajl = "last_settings.txt";
+            if (File.Exists(settingsFajl))
             {
-                string mapFajl = beallitasok.KivalasztottMapPath;
-                string mentesiMappa = beallitasok.KivalasztottLogMappa;
-                int maxOra = beallitasok.MegadottMaxOra;
+                try
+                {
+                    string[] sorok = File.ReadAllLines(settingsFajl);
+                    string mapFajl = sorok[0];
+                    string mentesiMappa = sorok[1];
+                    int maxOra = int.Parse(sorok[2]);
 
-                string teljesLogPath = Path.Combine(mentesiMappa, "rover_log.csv");
-                string teljesPathFile = Path.Combine(mentesiMappa, "rover_path.csv");
+                    Terkep = new MarsMap();
+                    Terkep.LoadFromFile(mapFajl);
 
-                Terkep = new MarsMap();
-                try { Terkep.LoadFromFile(mapFajl); }
-                catch { MessageBox.Show("Hiba a térkép betöltésekor!"); return; }
+                    string teljesLogPath = Path.Combine(mentesiMappa, "rover_log.csv");
+                    string teljesPathFile = Path.Combine(mentesiMappa, "rover_path.csv");
 
-                if (StatText != null) StatText.Text = "Szimuláció folyamatban...";
+                    RoverVezerlo vezerlo = new RoverVezerlo(Terkep, maxOra, teljesLogPath, false);
+                    vezerlo.SzimulacioInditasa();
 
-                RoverVezerlo vezerlo = new RoverVezerlo(Terkep, maxOra, teljesLogPath, false);
-                vezerlo.SzimulacioInditasa();
+                    BetoltLogEsUtvonal(teljesLogPath, teljesPathFile);
+                    DénesRover = new Rover { Pozicio = Terkep.KezdoPont };
 
-                BetoltLogEsUtvonal(teljesLogPath, teljesPathFile);
-                DénesRover = new Rover { Pozicio = Terkep.KezdoPont };
-                InicializalasMap();
+                    InicializalasMap();
+                    EredmenyekElokeszitese(mentesiMappa);
 
-                EredmenyekElokeszitese(mentesiMappa);
-
-                if (StatText != null) StatText.Text = "Betöltés kész! Kattints a Lejátszásra vagy nyomd a 'W'-t.";
-
-                if (AutoPlayGomb != null) AutoPlayGomb.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                Application.Current.Shutdown();
+                    StatText.Text = "Kész! Indítsd el a lejátszást.";
+                    AutoPlayGomb.Visibility = Visibility.Visible;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Hiba a betöltéskor: " + ex.Message);
+                }
             }
         }
 
@@ -174,7 +174,11 @@ namespace Vadász_Mars_Dénes
                 while (autoLejatszas && aktualisLogIndex < szimulaciosLog.Count)
                 {
                     await EgyLepesMegtetele();
-                    await Task.Delay(100); 
+
+                    // Kiszámoljuk a késleltetést a csúszka alapján
+                    // Alaphelyzet (1.0x) = 200ms. Ha 5.0x, akkor 200/5 = 40ms.
+                    int dinamikusDelay = (int)(200 / speedSlider.Value);
+                    await Task.Delay(dinamikusDelay);
                 }
 
                 if (aktualisLogIndex >= szimulaciosLog.Count)
@@ -202,39 +206,51 @@ namespace Vadász_Mars_Dénes
 
         private async Task EgyLepesMegtetele()
         {
+            // Megakadályozzuk a párhuzamos futást és ellenőrizzük, van-e még mit lejátszani
             if (folyamatban || aktualisLogIndex >= szimulaciosLog.Count) return;
             folyamatban = true;
 
             var sor = szimulaciosLog[aktualisLogIndex];
-            int seb = int.Parse(sor[5]);
+            int seb = int.Parse(sor[5]); // A log-ban tárolt sebesség (hány blokkot ugrik egy óra alatt)
 
             if (sor[8] == "Bányászat")
             {
+                // BÁNYÁSZAT LOGIKA
                 string banyaszottTipus = Terkep.Grid[DénesRover.Pozicio.X][DénesRover.Pozicio.Y];
 
                 if (banyaszottTipus == "B") { sikeresVals[0]++; maradtVals[0]--; }
                 else if (banyaszottTipus == "Y") { sikeresVals[1]++; maradtVals[1]--; }
                 else if (banyaszottTipus == "G" || banyaszottTipus == "#") { sikeresVals[2]++; maradtVals[2]--; }
 
+                // Talaj frissítése üresre bányászat után
                 Terkep.Grid[DénesRover.Pozicio.X][DénesRover.Pozicio.Y] = ".";
                 FrissitCella(DénesRover.Pozicio.X, DénesRover.Pozicio.Y);
             }
             else
             {
+                // MOZGÁS LOGIKA
                 for (int i = 0; i < seb && aktualisUtvonalIndex < utvonalPontok.Count; i++)
                 {
                     Point regi = DénesRover.Pozicio;
                     int regiIndex = regi.X * 50 + regi.Y;
+
                     if (regiIndex >= 0 && regiIndex < MapCells.Count)
                         MapCells[regiIndex].HasVisited = true;
 
+                    // Új pozíció beállítása az útvonal alapján
                     DénesRover.Pozicio = utvonalPontok[aktualisUtvonalIndex++];
+
+                    // Grafikus frissítés
                     FrissitCella(regi.X, regi.Y);
                     FrissitCella(DénesRover.Pozicio.X, DénesRover.Pozicio.Y);
-                    await Task.Delay(500);
+
+                    // DINAMIKUS KÉSLELTETÉS: 
+                    // Az alap 500ms-ot osztjuk a csúszka értékével (0.5x - 5.0x)
+                    await Task.Delay((int)(500 / speedSlider.Value));
                 }
             }
 
+            // --- DASHBOARD ADATOK FRISSÍTÉSE ---
             double oraVal = 0;
             if (sor[1].Contains(":"))
             {
@@ -258,6 +274,7 @@ namespace Vadász_Mars_Dénes
             else if (statusz.Contains("Haladás")) haladasVal[0]++;
             else hazaVal[0]++;
 
+            // Szöveges státusz frissítése
             if (StatText != null)
                 StatText.Text = $"Idő: {sor[1]} | Akku: {sor[4]}% | Státusz: {sor[8]} \nTávolság: {sor[6]} blokk  | Ásványok: {sor[7]}db";
 
@@ -293,7 +310,7 @@ namespace Vadász_Mars_Dénes
                 StatuszSeries.Add(new PieSeries { Title = "Haza", Values = hazaVal, DataLabels = true, LabelPoint = pieLabel });
 
                 SebessegSeries.Clear();
-                SebessegSeries.Add(new ColumnSeries { Title = "Gyakoriság", Values = sebessegVals, DataLabels = true, LabelPoint = p => p.Y.ToString() });
+                SebessegSeries.Add(new ColumnSeries { Title = "Gyakoriság", Values = sebessegVals, DataLabels = true, LabelPoint = p => p.Y.ToString(), LabelsPosition = BarLabelPosition.Parallel, Foreground = Brushes.White });
 
                 NapszakSeries.Clear();  
                 NapszakSeries.Add(new StackedColumnSeries { Title = "Nappal", Values = nBanyVals, DataLabels = true, LabelPoint = p => p.Y > 0 ? p.Y.ToString() : ""});
@@ -315,8 +332,8 @@ namespace Vadász_Mars_Dénes
                         maradtVals.Clear(); maradtVals.AddRange(new int[] { oV, oA, oR });
 
                         TeljesitmenySeries.Clear();
-                        TeljesitmenySeries.Add(new RowSeries { Title = "Begyűjtött", Values = sikeresVals, DataLabels = true, LabelPoint = p => p.X.ToString()});
-                        TeljesitmenySeries.Add(new RowSeries { Title = "Maradék", Values = maradtVals, DataLabels = true, LabelPoint = p => p.X.ToString()});
+                        TeljesitmenySeries.Add(new RowSeries { Title = "Begyűjtött", Values = sikeresVals, DataLabels = true, LabelPoint = p => p.X.ToString(),LabelsPosition = BarLabelPosition.Parallel});
+                        TeljesitmenySeries.Add(new RowSeries { Title = "Maradék", Values = maradtVals, DataLabels = true, LabelPoint = p => p.X.ToString(), LabelsPosition = BarLabelPosition.Parallel, Foreground = Brushes.White });
                     }
                 }
             }
