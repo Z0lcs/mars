@@ -169,8 +169,8 @@ namespace Vadász_Mars_Dénes
                 {
                     if (rover.Pozicio != terkep.KezdoPont &&
                         nappal &&
-                        (hatralevoPerc > szuksegesIdo + 120) &&
-                        (rover.Akkumulator >= biztonsagiAkku + 20) &&
+                        (hatralevoPerc > szuksegesIdo + 90) &&
+                        (rover.Akkumulator >= biztonsagiAkku + 10) &&
                         elerhetoAsvanyok.Any())
                     {
                         menekulesAktiv = false;
@@ -284,7 +284,7 @@ namespace Vadász_Mars_Dénes
                 double tavBazistol = tavolsagokBazistol[a.X, a.Y];
                 int suruseg = elerhetoAsvanyok.Count(m => Tavolsag(m, a) <= 3);
 
-                return (tavAktol * 5.0) - (suruseg * 10.0) + (tavBazistol * hazaHuzas);
+                return (tavAktol * 5.0) - (suruseg * 5.0) + (tavBazistol * hazaHuzas);
             }).First();
         }
 

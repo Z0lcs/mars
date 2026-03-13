@@ -7,6 +7,7 @@ namespace Vadász_Mars_Dénes
     {
         private ImageSource _imageSource;
         private bool _hasVisited;
+        private double _rotationAngle; // Új mező a forgatáshoz
 
         public ImageSource ImageSource
         {
@@ -14,11 +15,17 @@ namespace Vadász_Mars_Dénes
             set { _imageSource = value; OnPropertyChanged(nameof(ImageSource)); }
         }
 
-        // Új tulajdonság a nyomvonal jelzéséhez
         public bool HasVisited
         {
             get => _hasVisited;
             set { _hasVisited = value; OnPropertyChanged(nameof(HasVisited)); }
+        }
+
+        // Új tulajdonság az elforgatás szögének tárolásához
+        public double RotationAngle
+        {
+            get => _rotationAngle;
+            set { _rotationAngle = value; OnPropertyChanged(nameof(RotationAngle)); }
         }
 
         public string Coordinates { get; set; }

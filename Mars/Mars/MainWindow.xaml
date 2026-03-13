@@ -86,7 +86,12 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Grid Margin="0.1">
-                                    <Image Source="{Binding ImageSource, Mode=OneWay}" ToolTip="{Binding Coordinates}" Stretch="Uniform"/>
+                                    <Image Source="{Binding ImageSource, Mode=OneWay}" ToolTip="{Binding Coordinates}" Stretch="Uniform" RenderTransformOrigin="0.5,0.5">
+                                        <Image.RenderTransform>
+                                            <RotateTransform Angle="{Binding RotationAngle}"/>
+                                        </Image.RenderTransform>
+                                    </Image>
+
                                     <Ellipse Fill="#FF0000" Width="4" Height="4" Opacity="0.8" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <Ellipse.Style>
                                             <Style TargetType="Ellipse">
