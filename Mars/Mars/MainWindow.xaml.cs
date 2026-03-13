@@ -144,7 +144,14 @@ namespace Vadász_Mars_Dénes
 
         private ImageSource GetImageForSign(string sign, int x, int y)
         {
-            if (DénesRover.Pozicio.X == x && DénesRover.Pozicio.Y == y) return GetCachedImage("rover_egyenesben.png");
+            if (DénesRover.Pozicio.X == x && DénesRover.Pozicio.Y == y)
+            {
+                return GetCachedImage("rover_egyenesben.png");
+            }
+            if (Terkep.KezdoPont.X == x && Terkep.KezdoPont.Y == y)
+            {
+                return GetCachedImage("Brit.png");
+            }
             return sign switch
             {
                 "Y" => GetCachedImage("ritkaarany_talajon.png"),
