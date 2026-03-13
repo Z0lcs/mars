@@ -19,7 +19,6 @@ namespace Vadász_Mars_Dénes
         private bool menekulesAktiv = false;
         private int lepesSzamlalo = 0;
 
-        // Távolság- és akadálymátrix a "falakon átlátó" navigációhoz
         private bool[,] akadalyMatrix;
         private int[,] tavolsagokBazistol;
 
@@ -40,7 +39,6 @@ namespace Vadász_Mars_Dénes
             this.kezdetiRitka = terkep.RitkaAsvany.Count;
             this.kezdetiOsszes = kezdetiVizjeg + kezdetiArany + kezdetiRitka;
 
-            // Betöltjük a falakat, hogy az A* algoritmus tudja kikerülni őket
             akadalyMatrix = new bool[50, 50];
             foreach (var a in terkep.Akadalyok)
             {
@@ -50,7 +48,6 @@ namespace Vadász_Mars_Dénes
                 }
             }
 
-            // Kiszámolja minden egyes kocka VALÓS távolságát a bázistól a falak megkerülésével
             tavolsagokBazistol = BfsMindenTavolsag(terkep.KezdoPont);
 
             this.kijelzo = new Megjelenito(logPath, maxOra, konzolraIr);
@@ -111,9 +108,6 @@ namespace Vadász_Mars_Dénes
 
                 var asvanyok = GetAsvanyok();
 
-                // --- LÉGHERMETIKUS IDŐZÍTŐ VÉDELEM ---
-                // Csak azt látja meg, amire fizikailag elég a beállított idő (pl. 24 óra esetén ki se megy a szélére!)
-                // 15 perc / lépés oda + 30 perc ásás + 15 perc / lépés vissza. Ebbe 100%-osan belefér!
                 var elerhetoAsvanyok = asvanyok.Where(a =>
                 {
                     if (tavolsagokAktol[a.X, a.Y] >= 9999) return false;
@@ -123,8 +117,6 @@ namespace Vadász_Mars_Dénes
 
                 int tavBazisig = tavolsagokAktol[terkep.KezdoPont.X, terkep.KezdoPont.Y];
 
-                // --- JÖVŐBELÁTÓ AKKU SZIMULÁTOR ---
-                // Gondolatban lépésről lépésre végigmegy a hazaúton, így PONTOSAN tudja, mikor kell indulnia!
                 double simAkkuAkt = rover.Akkumulator;
                 double legkisebbSzint = rover.Akkumulator;
                 int simPerc = ido.ElteltPerc;
@@ -150,7 +142,7 @@ namespace Vadász_Mars_Dénes
                     int lepes = Math.Min(hatralevoTav, maxSeb);
 
                     double fogy = 2 * Math.Pow(lepes, 2);
-                    if (simNappal) fogy -= 10; // Napelem töltés
+                    if (simNappal) fogy -= 10;
 
                     simAkkuAkt -= fogy;
                     if (simAkkuAkt > 100) simAkkuAkt = 100;
@@ -163,7 +155,6 @@ namespace Vadász_Mars_Dénes
                 double deficit = rover.Akkumulator - legkisebbSzint;
                 double biztonsagiAkku = Math.Max(12.0, deficit + 10.0);
 
-                // Túlélési Időzítő (+60 perc ráhagyással)
                 double szuksegesIdo = (simPerc - ido.ElteltPerc) + 60.0;
                 bool idoFogy = (hatralevoPerc <= szuksegesIdo);
 
@@ -176,7 +167,6 @@ namespace Vadász_Mars_Dénes
                 }
                 else
                 {
-                    // Ha útközben újra feltölt, de MÉG VAN RENGETEG IDŐ, visszamehet porszívózni!
                     if (rover.Pozicio != terkep.KezdoPont &&
                         nappal &&
                         (hatralevoPerc > szuksegesIdo + 120) &&
@@ -187,20 +177,17 @@ namespace Vadász_Mars_Dénes
                     }
                 }
 
-                // --- VILLÁM-MÁSODIK MŰSZAK (Bázison várakozás) ---
                 if (rover.Pozicio == terkep.KezdoPont && menekulesAktiv && taktus > 1)
                 {
                     if (elerhetoAsvanyok.Any())
                     {
-                        // Kiszámoljuk, mennyi akku kell CSAK a legközelebbi ásványhoz!
                         var cel = elerhetoAsvanyok.OrderBy(a => tavolsagokBazistol[a.X, a.Y]).First();
                         int tavCelhoz = tavolsagokBazistol[cel.X, cel.Y];
                         double szuksegesAktivAkku = (tavCelhoz * 2.0 * 2) + 15.0;
 
-                        // Ha nincs elég akkuja, VAGY éjszaka van és merül, akkor tölt
                         if (rover.Akkumulator < szuksegesAktivAkku && rover.Akkumulator < 95)
                         {
-                            if (rover.Akkumulator <= 2 && !nappal) break; // Ne merüljön le éjjel
+                            if (rover.Akkumulator <= 2 && !nappal) break;
 
                             aktualisStatusz = "Töltés";
                             rover.FrissitEnergia(rover.SzamolFogyasztas(0, nappal, false));
@@ -210,13 +197,12 @@ namespace Vadász_Mars_Dénes
                         }
                         else
                         {
-                            // Amint megvan az akku, AZONNAL KILÖVI MAGÁT! Nem dekkol órákat!
                             menekulesAktiv = false;
                         }
                     }
                     else
                     {
-                        break; // Tényleg mindent felszedett amit be lehetett hozni! VÉGE.
+                        break;
                     }
                 }
 
@@ -282,20 +268,14 @@ namespace Vadász_Mars_Dénes
         {
             if (!elerhetoAsvanyok.Any()) return terkep.KezdoPont;
 
-            // 1. VÁKUUM-MÓD: 3 lépésen belül nincs matek, csak takarítás!
-            // Ez menti meg a 24/48 órás eredményeket.
             var kornyezet = elerhetoAsvanyok.Where(a => tavMatrix[a.X, a.Y] <= 3).ToList();
             if (kornyezet.Any())
             {
-                // A legközelebbit vigye, hogy ne ugráljon.
                 return kornyezet.OrderBy(a => tavMatrix[a.X, a.Y]).First();
             }
 
             double progress = (double)ido.ElteltPerc / (maxOra * 60.0);
 
-            // 2. TÁVOLSÁGI STRATÉGIA
-            // A hazaút-kényszert (progress) négyzetre emeljük, hogy az elején ne zavarjon be,
-            // de a végén (90% után) brutálisan hazarántsa a rovert.
             double hazaHuzas = Math.Pow(progress, 3) * 25.0;
 
             return elerhetoAsvanyok.OrderBy(a =>
@@ -304,9 +284,6 @@ namespace Vadász_Mars_Dénes
                 double tavBazistol = tavolsagokBazistol[a.X, a.Y];
                 int suruseg = elerhetoAsvanyok.Count(m => Tavolsag(m, a) <= 3);
 
-                // EGYENSÚLY: 
-                // - A távolság-büntetés (5.0) erős, hogy ne kóboroljon el feleslegesen.
-                // - A sűrűség-bónusz (10.0) segít megtalálni a zsírosabb foltokat.
                 return (tavAktol * 5.0) - (suruseg * 10.0) + (tavBazistol * hazaHuzas);
             }).First();
         }
@@ -326,7 +303,6 @@ namespace Vadász_Mars_Dénes
                 }
                 else
                 {
-                    // Éjjel meneküléskor az 1 a legtakarékosabb!
                     if (r.Akkumulator > biztonsagiAkku + 10) maxSeb = 2;
                     else maxSeb = 1;
                 }
@@ -335,14 +311,12 @@ namespace Vadász_Mars_Dénes
             {
                 if (nappal)
                 {
-                    // Naplemente-töltés (13-16 óra között biztosítja a teli akkut éjszakára)
                     if (aktualisOra >= 13.0 && aktualisOra < 16.0 && r.Akkumulator < 90) maxSeb = 1;
                     else if (r.Akkumulator >= 20) maxSeb = 3;
                     else if (r.Akkumulator >= 8) maxSeb = 2;
                 }
                 else
                 {
-                    // Éjjel nyugodtan léphet 3-asával, ha van bőven akkuja! (pl. töltés utáni indulásnál)
                     if (r.Akkumulator >= 60) maxSeb = 3;
                     else if (r.Akkumulator >= 30) maxSeb = 2;
                     else maxSeb = 1;
