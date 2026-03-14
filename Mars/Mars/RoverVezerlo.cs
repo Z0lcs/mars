@@ -153,9 +153,11 @@ namespace Vadász_Mars_Dénes
                 }
 
                 double deficit = rover.Akkumulator - legkisebbSzint;
-                double biztonsagiAkku = Math.Max(12.0, deficit + 10.0);
+                //double biztonsagiAkku = Math.Max(12.0, deficit + 10.0);
+                double biztonsagiAkku = Math.Max(5.0, deficit + 2.0);
 
-                double szuksegesIdo = (simPerc - ido.ElteltPerc) + 60.0;
+                // 60 perc helyett csak 0 vagy maximum 30 perc (1 lépés) puffert hagyunk
+                double szuksegesIdo = (simPerc - ido.ElteltPerc) + 0.0;
                 bool idoFogy = (hatralevoPerc <= szuksegesIdo);
 
                 if (!menekulesAktiv)
@@ -169,8 +171,8 @@ namespace Vadász_Mars_Dénes
                 {
                     if (rover.Pozicio != terkep.KezdoPont &&
                         nappal &&
-                        (hatralevoPerc > szuksegesIdo + 90) &&
-                        (rover.Akkumulator >= biztonsagiAkku + 10) &&
+                        (hatralevoPerc > szuksegesIdo + 30) && //90 volt
+                        (rover.Akkumulator >= biztonsagiAkku + 5) && // 10 volt
                         elerhetoAsvanyok.Any())
                     {
                         menekulesAktiv = false;
@@ -268,23 +270,43 @@ namespace Vadász_Mars_Dénes
         {
             if (!elerhetoAsvanyok.Any()) return terkep.KezdoPont;
 
-            var kornyezet = elerhetoAsvanyok.Where(a => tavMatrix[a.X, a.Y] <= 3).ToList();
+            // --- TUNING PARAMÉTEREK (Ideális értékek teszteléséhez) ---
+
+            // 1. A Porszívó: Milyen távolságon belül szedjen fel azonnal mindent, gondolkodás nélkül? (Alap: 3)
+            int porszivoSugar = 3;
+
+            // 2. Távolság büntetése: Kisebb szám = bátrabban indul el messzire az elején. (Alap: 5.0)
+            double tavolsagBuntetes = 5.0;
+
+            // 3. Sűrűség vizsgálata: Mekkora körzetben számolja a szomszédos ásványokat egy célpont körül? (Alap: 3)
+            int surusegSugar = 3;
+
+            // 4. Sűrűség jutalma: Nagyobb szám = jobban vonzzák a nagy kupacok, akár távolabb is. (Alap: 5.0)
+            double surusegJutalom = 5.0;
+
+            // 5. Hazahúzás ereje: Milyen erősen vonzza a bázis a szimuláció vége felé? (Alap: 25.0)
+            double hazaHuzasSzorzo = 25.0;
+
+            // 6. Hazahúzás görbéje: Magasabb szám (pl. 4) esetén sokáig kint marad, és csak az utolsó pillanatban kezd el durván hazahúzni. (Alap: 3.0)
+            double hazaHuzasHatvany = 3.0;
+            // -----------------------------------------------------------
+
+            var kornyezet = elerhetoAsvanyok.Where(a => tavMatrix[a.X, a.Y] <= porszivoSugar).ToList();
             if (kornyezet.Any())
             {
                 return kornyezet.OrderBy(a => tavMatrix[a.X, a.Y]).First();
             }
 
             double progress = (double)ido.ElteltPerc / (maxOra * 60.0);
-
-            double hazaHuzas = Math.Pow(progress, 3) * 25.0;
+            double hazaHuzas = Math.Pow(progress, hazaHuzasHatvany) * hazaHuzasSzorzo;
 
             return elerhetoAsvanyok.OrderBy(a =>
             {
                 double tavAktol = tavMatrix[a.X, a.Y];
                 double tavBazistol = tavolsagokBazistol[a.X, a.Y];
-                int suruseg = elerhetoAsvanyok.Count(m => Tavolsag(m, a) <= 3);
+                int suruseg = elerhetoAsvanyok.Count(m => Tavolsag(m, a) <= surusegSugar);
 
-                return (tavAktol * 5.0) - (suruseg * 5.0) + (tavBazistol * hazaHuzas);
+                return (tavAktol * tavolsagBuntetes) - (suruseg * surusegJutalom) + (tavBazistol * hazaHuzas);
             }).First();
         }
 
