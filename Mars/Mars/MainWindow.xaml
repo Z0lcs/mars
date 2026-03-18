@@ -56,7 +56,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="StatText" Text="Térkép betöltése..." Foreground="#E0E0E0" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Grid.ColumnSpan="2"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="400,13,0,7">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="467,13,0,7">
                     <Ellipse x:Name="NapszakIndikator" Width="20" Height="20" Fill="Yellow" Margin="0,0,10,0">
                         <Ellipse.Effect>
                             <DropShadowEffect x:Name="IndikatorFeny" Color="Orange" BlurRadius="15" ShadowDepth="0"/>
@@ -69,7 +69,8 @@
                     <TextBlock Text="{Binding ElementName=speedSlider, Path=Value, StringFormat='Sebesség: {0:F1}x'}" Foreground="White" HorizontalAlignment="Center" FontSize="14" FontWeight="Bold"/>
                     <Slider x:Name="speedSlider" Minimum="0.5" Maximum="5.0" Value="1.0" TickFrequency="0.5" IsSnapToTickEnabled="True" Width="200" Margin="5" HorizontalAlignment="Center"/>
                 </StackPanel>
-                <Button x:Name="Vissza" Content="Vissza a főmenübe" Click="Back_Click" Background="#27AE60" Foreground="White" FontWeight="Bold" Padding="15,8" BorderThickness="0" Cursor="Hand" Margin="1045,0,19,0" HorizontalAlignment="right"/>
+                <Button x:Name="Vissza" Content="Vissza a főmenübe" Click="Back_Click" Background="#27AE60" Foreground="White" FontWeight="Bold" Padding="15,8" BorderThickness="0" Cursor="Hand" Margin="930,0,0,0" HorizontalAlignment="Center"/>
+                <Button x:Name="LogMegnyitasGomb" Content="📂 Log megnyitása" Click="LogMegnyitas_Click" Visibility="Collapsed" Background="#34495E" Foreground="White" FontWeight="Bold" Padding="15,8" BorderThickness="0" Cursor="Hand" Margin="1047,0,0,0" HorizontalAlignment="Right" />
                 <Button Grid.Column="1" x:Name="AutoPlayGomb" Content="▶ Lejátszás" Click="AutoPlay_Click" 
                         Background="#27AE60" Foreground="White" FontWeight="Bold" Padding="15,8" BorderThickness="0" Cursor="Hand" />
             </Grid>
@@ -253,9 +254,7 @@
                                 </lvc:CartesianChart>
                             </Grid>
                         </Border>
-
-
-
+                        
                         <Border Style="{StaticResource CardStyle}">
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -266,7 +265,15 @@
                                 <lvc:PieChart Grid.Row="1" Series="{Binding StatuszSeries}" LegendLocation="Bottom" InnerRadius="40" Foreground="White"/>
                             </Grid>
                         </Border>
-
+                        <Border >
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Button Grid.Row="1" x:Name="LogegnyitasGomb" Content="📂 Log megnyitása" Click="LogMegnyitas_Click" Visibility="Visible" Background="#34495E" Foreground="White" FontWeight="Bold" Padding="15,8" BorderThickness="0" Cursor="Hand" Margin="1047,0,0,0" HorizontalAlignment="Right" />
+                            </Grid>
+                        </Border>
                     </WrapPanel>
                 </ScrollViewer>
             </Border>

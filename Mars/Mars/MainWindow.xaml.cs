@@ -201,6 +201,7 @@ namespace Vadász_Mars_Dénes
                     AutoPlayGomb.Content = "🔄 Újraindítás";
                     AutoPlayGomb.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3498DB"));
                     autoLejatszas = false;
+                    LogMegnyitasGomb.Visibility = Visibility.Visible;
                 }
             }
             else
@@ -217,6 +218,8 @@ namespace Vadász_Mars_Dénes
             folyamatban = false;
 
             DénesRover.Pozicio = Terkep.KezdoPont;
+            
+            LogMegnyitasGomb.Visibility = Visibility.Collapsed;
 
             string settingsFajl = "last_settings.txt";
             if (File.Exists(settingsFajl))
@@ -226,6 +229,7 @@ namespace Vadász_Mars_Dénes
                 string mentesiMappa = sorok[1];
 
                 akkuPts.Clear();
+                asvanyPts.Clear();
                 asvanyPts.Add(new ObservablePoint(0, 0)); // Kezdőpont az ásványnak
                 akkuPts.Add(new ObservablePoint(0, 100)); // Kezdőpont az akkunak
 
@@ -249,6 +253,12 @@ namespace Vadász_Mars_Dénes
                 AutoPlayGomb.Content = "🔄 Újraindítás";
                 AutoPlayGomb.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3498DB"));
                 autoLejatszas = false;
+
+                LogMegnyitasGomb.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                LogMegnyitasGomb.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -261,6 +271,34 @@ namespace Vadász_Mars_Dénes
             setupAblak.Show();
 
             this.Close();
+        }
+
+        private void LogMegnyitas_Click(object sender, RoutedEventArgs e)
+        {
+            string settingsFajl = "last_settings.txt";
+            if (File.Exists(settingsFajl))
+            {
+                string[] sorok = File.ReadAllLines(settingsFajl);
+                string mentesiMappa = sorok[1];
+                string teljesLogPath = Path.Combine(mentesiMappa, "rover_log.csv");
+
+                if (File.Exists(teljesLogPath))
+                {
+                    try
+                    {
+                        // Megnyitja a fájlt az alapértelmezett programmal
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(teljesLogPath) { UseShellExecute = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Nem sikerült megnyitni a log fájlt: " + ex.Message);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("A log fájl nem található a megadott helyen.");
+                }
+            }
         }
 
         private async void MainWindow_KeyDown(object sender, KeyEventArgs e)
