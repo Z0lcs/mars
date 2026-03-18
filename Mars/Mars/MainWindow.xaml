@@ -55,7 +55,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="StatText" Text="Térkép betöltése..." Foreground="#E0E0E0" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <TextBlock x:Name="StatText" Text="Térkép betöltése..." Foreground="#E0E0E0" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,811,0"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="400,13,0,7">
                     <Ellipse x:Name="NapszakIndikator" Width="20" Height="20" Fill="Yellow" Margin="0,0,10,0">
                         <Ellipse.Effect>
@@ -67,10 +67,11 @@
                 </StackPanel>
                 <StackPanel Orientation="Vertical" HorizontalAlignment="Left" Margin="674,13,0,7">
                     <TextBlock Text="{Binding ElementName=speedSlider, Path=Value, StringFormat='Sebesség: {0:F1}x'}" Foreground="White" HorizontalAlignment="Center" FontSize="14" FontWeight="Bold"/>
-                    <Slider x:Name="speedSlider" Minimum="0.5" Maximum="5.0" Value="1.0" TickFrequency="0.5" IsSnapToTickEnabled="True" Width="200" Margin="5"/>
+                    <Slider x:Name="speedSlider" Minimum="0.5" Maximum="5.0" Value="1.0" TickFrequency="0.5" IsSnapToTickEnabled="True" Width="200" Margin="5" HorizontalAlignment="Center"/>
                 </StackPanel>
+                <Button x:Name="Vissza" Content="Vissza a főmenübe" Click="Back_Click" Background="#27AE60" Foreground="White" FontWeight="Bold" Padding="15,8" BorderThickness="0" Cursor="Hand" Margin="1045,0,19,0" HorizontalAlignment="right"/>
                 <Button Grid.Column="1" x:Name="AutoPlayGomb" Content="▶ Lejátszás" Click="AutoPlay_Click" 
-                        Background="#27AE60" Foreground="White" FontWeight="Bold" Padding="15,8" BorderThickness="0" Cursor="Hand" Visibility="Collapsed"/>
+                        Background="#27AE60" Foreground="White" FontWeight="Bold" Padding="15,8" BorderThickness="0" Cursor="Hand" />
             </Grid>
 
             <CheckBox Grid.Row="1" x:Name="TrailToggle" Content="Nyomvonal megjelenítése 👣" IsChecked="True" Foreground="#BDC3C7" Margin="0,0,0,10"/>
@@ -116,9 +117,36 @@
             </Border>
         </Grid>
 
-        <Expander Grid.Column="1" ExpandDirection="Left" IsExpanded="False" Background="#181818" BorderBrush="#333">
+        <Expander Grid.Column="1" ExpandDirection="Left" IsExpanded="False" Background="#181818" BorderBrush="#333" >
+            <Expander.Template>
+                <ControlTemplate TargetType="Expander">
+                    <DockPanel Background="{TemplateBinding Background}">
+
+                        <ToggleButton DockPanel.Dock="Right" 
+                              IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                              Cursor="Hand">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border Background="Transparent" Padding="10">
+                                        <ContentPresenter Content="{Binding Header, RelativeSource={RelativeSource AncestorType=Expander}}" />
+                                    </Border>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+
+                        <ContentPresenter x:Name="KinyiloTartalom" Visibility="Collapsed" DockPanel.Dock="Left" />
+                    </DockPanel>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsExpanded" Value="True">
+                            <Setter TargetName="KinyiloTartalom" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Expander.Template>
             <Expander.Header>
-                <TextBlock Text="📊 DASHBOARD" Foreground="#AAAAAA" FontWeight="Bold">
+
+                <TextBlock Text="📊 DASHBOARD" Foreground="White" FontWeight="Bold" Height="50" FontSize="40">
                     <TextBlock.LayoutTransform>
                         <RotateTransform Angle="90"/>
                     </TextBlock.LayoutTransform>
@@ -215,7 +243,7 @@
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
                                 <TextBlock Text="Bányászat Napszakonként" Style="{StaticResource TitleStyle}"/>
-                                <lvc:CartesianChart Grid.Row="1" Series="{Binding NapszakSeries}" LegendLocation="Bottom" Foreground="White">
+                                <lvc:CartesianChart Grid.Row="1" Series="{Binding NapszakSeries}" LegendLocation="Bottom" Foreground="White" DataTooltip="{x:Null}">
                                     <lvc:CartesianChart.SeriesColors>
                                         <lvc:ColorsCollection>
                                             <Color>#F1C40F</Color>

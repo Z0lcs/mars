@@ -171,7 +171,15 @@ namespace Vadász_Mars_Dénes
 
         private async void AutoPlay_Click(object sender, RoutedEventArgs e)
         {
-            autoLejatszas = !autoLejatszas;
+            if (aktualisLogIndex >= szimulaciosLog.Count)
+            {
+                ResetSzimulacio(); // Mindent alaphelyzetbe állítunk
+                autoLejatszas = false;
+            }
+            else
+            {
+                autoLejatszas = !autoLejatszas;
+            }
 
             if (autoLejatszas)
             {
@@ -182,17 +190,14 @@ namespace Vadász_Mars_Dénes
                 {
                     await EgyLepesMegtetele();
 
-                    // Kiszámoljuk a késleltetést a csúszka alapján
-                    // Alaphelyzet (1.0x) = 200ms. Ha 5.0x, akkor 200/5 = 40ms.
                     int dinamikusDelay = (int)(200 / speedSlider.Value);
                     await Task.Delay(dinamikusDelay);
                 }
 
                 if (aktualisLogIndex >= szimulaciosLog.Count)
                 {
-                    AutoPlayGomb.Content = "Kész";
-                    AutoPlayGomb.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FF00"));
-                    AutoPlayGomb.IsEnabled = false;
+                    AutoPlayGomb.Content = "🔄 Újraindítás";
+                    AutoPlayGomb.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3498DB"));
                     autoLejatszas = false;
                 }
             }
@@ -203,11 +208,68 @@ namespace Vadász_Mars_Dénes
             }
         }
 
+        private void ResetSzimulacio()
+        {
+            aktualisLogIndex = 0;
+            aktualisUtvonalIndex = 0;
+            folyamatban = false;
+
+            DénesRover.Pozicio = Terkep.KezdoPont;
+
+            string settingsFajl = "last_settings.txt";
+            if (File.Exists(settingsFajl))
+            {
+                string[] sorok = File.ReadAllLines(settingsFajl);
+                Terkep.LoadFromFile(sorok[0]); // Újraolvassuk az eredeti CSV-t
+                string mentesiMappa = sorok[1];
+
+                akkuPts.Clear();
+                asvanyPts.Add(new ObservablePoint(0, 0)); // Kezdőpont az ásványnak
+                akkuPts.Add(new ObservablePoint(0, 100)); // Kezdőpont az akkunak
+
+                sebessegVals[0] = 0; sebessegVals[1] = 0; sebessegVals[2] = 0;
+                haladasVal[0] = 0;
+                banyaszatVal[0] = 0;
+                hazaVal[0] = 0;
+                nBanyVals[0] = 0; nBanyVals[1] = 0;
+                eBanyVals[0] = 0; eBanyVals[1] = 0;
+
+                EredmenyekElokeszitese(mentesiMappa);
+
+                InicializalasMap();
+            }
+        }
+
+        private void FrissitAutoPlayGombAllapot()
+        {
+            if (aktualisLogIndex >= szimulaciosLog.Count)
+            {
+                AutoPlayGomb.Content = "🔄 Újraindítás";
+                AutoPlayGomb.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3498DB"));
+                autoLejatszas = false;
+            }
+        }
+
+        private void Back_Click(object sender, RoutedEventArgs e)
+        {
+            autoLejatszas = false;
+
+            SetupWindow setupAblak = new SetupWindow();
+
+            setupAblak.Show();
+
+            this.Close();
+        }
+
         private async void MainWindow_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.W && !autoLejatszas)
             {
-                await EgyLepesMegtetele();
+                if (aktualisLogIndex < szimulaciosLog.Count)
+                {
+                    await EgyLepesMegtetele();
+                    FrissitAutoPlayGombAllapot();
+                }
             }
         }
 
@@ -286,7 +348,7 @@ namespace Vadász_Mars_Dénes
             else hazaVal[0]++;
 
             if (StatText != null)
-                StatText.Text = $"Idő: {sor[1]} | Akku: {sor[4]}% | Státusz: {sor[8]} \nTávolság: {sor[6]} blokk  | Ásványok: {sor[7]}db";
+                StatText.Text = $"Idő: {sor[1]} | Akku: {sor[4]}% | Státusz: {sor[8]} \nMegtett távolság: {sor[6]} blokk  | Ásványok: {sor[7]}db";
 
             aktualisLogIndex++;
             folyamatban = false;

@@ -109,5 +109,17 @@ namespace Vadász_Mars_Dénes
 
             this.Close();
         }
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            var valasz = MessageBox.Show("Biztosan be akarod zárni a Mars-szimulációt?",
+                                         "Kilépés",
+                                         MessageBoxButton.YesNo,
+                                         MessageBoxImage.Question);
+
+            if (valasz == MessageBoxResult.Yes)
+            {
+                Application.Current.Shutdown(); 
+            }
+        }
     }
 }

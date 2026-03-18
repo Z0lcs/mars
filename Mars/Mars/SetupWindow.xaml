@@ -48,8 +48,10 @@
             <TextBlock Grid.Column="1" Text="(Minimum 24 óra)" Foreground="#7F8C8D" VerticalAlignment="Center" Margin="95,0,0,0"/>
         </Grid>
 
-        <Button Grid.Row="5" Content="🚀 SZIMULÁCIÓ INDÍTÁSA" Click="Start_Click" 
+        <Button Grid.Row="4" Content="🚀 SZIMULÁCIÓ INDÍTÁSA" Click="Start_Click" 
                 Background="#27AE60" Foreground="White" FontSize="16" FontWeight="Bold" 
-                Height="45" BorderThickness="0" Cursor="Hand"/>
+                Height="45" BorderThickness="0" Cursor="Hand" />
+        <Button Grid.Row="5" Content="Kilépés" Click="Close_Click" 
+                Background="#FF0000" Foreground="White" FontSize="16" FontWeight="Bold" BorderThickness="0" Cursor="Hand" Margin="214,5,214,5"/>
     </Grid>
 </Window>
