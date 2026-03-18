@@ -57,6 +57,7 @@ namespace Vadász_Mars_Dénes
         private ChartValues<int> eBanyVals = new ChartValues<int> { 0, 0 }; // Éjjel
         private ChartValues<int> sikeresVals = new ChartValues<int> { 0, 0, 0 }; 
         private ChartValues<int> maradtVals = new ChartValues<int> { 0, 0, 0 };
+        private int maxOraErtek = 0; 
 
         public MainWindow()
         {
@@ -90,6 +91,7 @@ namespace Vadász_Mars_Dénes
                     string mapFajl = sorok[0];
                     string mentesiMappa = sorok[1];
                     int maxOra = int.Parse(sorok[2]);
+                    maxOraErtek = maxOra;
 
                     Terkep = new MarsMap();
                     Terkep.LoadFromFile(mapFajl);
@@ -348,7 +350,7 @@ namespace Vadász_Mars_Dénes
             else hazaVal[0]++;
 
             if (StatText != null)
-                StatText.Text = $"Idő: {sor[1]} | Akku: {sor[4]}% | Státusz: {sor[8]} \nMegtett távolság: {sor[6]} blokk  | Ásványok: {sor[7]}db";
+                StatText.Text = $"Idő: {sor[1]} / {maxOraErtek}:00 | Akku: {sor[4]}% | Státusz: {sor[8]} \nMegtett távolság: {sor[6]} blokk  | Ásványok: {sor[7]}db";
 
             aktualisLogIndex++;
             folyamatban = false;
