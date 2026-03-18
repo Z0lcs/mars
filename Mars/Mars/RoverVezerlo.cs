@@ -248,6 +248,10 @@ namespace Vadász_Mars_Dénes
 
                     rover.FrissitEnergia(rover.SzamolFogyasztas(sebessegMod, nappal, false));
                     ido.IdoUgras(30);
+                    if (celpont == terkep.KezdoPont && rover.Pozicio == terkep.KezdoPont)
+                    {
+                        aktualisStatusz = "HAZAÉRT / Bázison";
+                    }
 
                     int kiirtSebesseg = (lepes > 0) ? (int)lepes : sebessegMod;
                     kijelzo.LogEsKiir(taktus, ido, induloPoz, rover.Pozicio, kiirtSebesseg, aktualisStatusz, nappal, rover, osszesTavolsag);
