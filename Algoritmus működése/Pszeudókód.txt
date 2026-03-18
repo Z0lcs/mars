@@ -1,0 +1,55 @@
+ALGORITMUS MarsRoverVezérlő
+    
+    // 1. INICIALIZÁLÁS
+    RoverPozíció = Térkép.Kezdőpont
+    Akadálymátrix létrehozása a tereptárgyakból
+    BázisTávolságok = BFS_MindenTávolság(Kezdőpont)
+
+    // 2. FŐ CIKLUS
+    AMÍG (AktuálisIdő < MaxIdő ÉS Akkumulátor > 0) CIKLUS
+        
+        // Környezet és biztonság elemzése
+        TávolságokAktuálistól = BFS_MindenTávolság(RoverPozíció)
+        HátralévőPerc = ÖsszesIdő - ElteltIdő
+        
+        // Visszaút szimuláció (Biztonsági akkumulátorszint meghatározása)
+        SimAkku = SzimulálEnergiaFogyasztás(Bázisig, Napszak)
+        BiztonságiKüszöb = Deficit + Puffer
+
+        // Menekülési állapot (Vész-hazatérés) kezelése
+        HA (IdőFogy VAGY Akku < BiztonságiKüszöb VAGY Nincs Elérhető Ásvány) AKKOR
+            MenekülésMód = IGAZ
+        VÉGE HA
+
+        // 3. DÖNTÉSHOZATAL ÉS CSELEKVÉS
+        HA (Pozíció == Bázis ÉS MenekülésMód ÉS Akku < 95) AKKOR
+            Állapot = "Töltés"
+            Akkumulátor töltése (Napszak szerint)
+        
+        KÜLÖNBEN HA (Ásványon áll ÉS (NEM Menekülés VAGY VanExtraEnergia)) AKKOR
+            Állapot = "Bányászat"
+            Ásvány kigyűjtése a térképről
+            Energia csökkentése (Bányászat költsége)
+        
+        EGYÉBÉNT
+            // Célpont meghatározása
+            HA (MenekülésMód) AKKOR
+                Célpont = Bázis
+                Állapot = "Vész-Hazatérés"
+            EGYÉBÉNT
+                Célpont = VálasszOptimálisCélt(Ásványok, Távolságok, BázisTávolságok)
+                Állapot = "Haladás"
+            VÉGE HA
+
+            // Mozgás végrehajtása
+            Sebesség = HatározzMegSebességet(Akku, Napszak, Távolság)
+            KövetkezőLépés = KeresLegjobbSzomszéd(AktuálisPozíció, Célpont)
+            MozgatRover(KövetkezőLépés, Sebesség)
+            Energia csökkentése (Mozgás költsége)
+        VÉGE HA
+
+        Idő léptetése (30 perc)
+    CIKLUS VÉGE
+
+    Statisztikák és eredmények mentése
+VÉGE ALGORITMUS
