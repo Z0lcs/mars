@@ -55,7 +55,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="StatText" Text="Térkép betöltése..." Foreground="#E0E0E0" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,811,0"/>
+                <TextBlock x:Name="StatText" Text="Térkép betöltése..." Foreground="#E0E0E0" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Grid.ColumnSpan="2"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="400,13,0,7">
                     <Ellipse x:Name="NapszakIndikator" Width="20" Height="20" Fill="Yellow" Margin="0,0,10,0">
                         <Ellipse.Effect>
