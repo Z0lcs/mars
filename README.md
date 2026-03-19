@@ -14,3 +14,16 @@ Felhasznált külső könyvtárak: LiveCharts.Wpf (verzió: 0.9.7) – Grafikono
 Célplatform: Windows (WPF Application)
 
 Program használati útmutatója:
+
+Első lépésként adjuk meg a térképet .csv formátumban. Válasszuk ki a mappa helyét, ahová a program a log-fájlokat menti (eseménynapló, dashboard adatok, rover útvonala). Emellett állítsuk be a szimuláció hosszát, majd indítsuk el a folyamatot.
+A képernyőn a térkép mellett egy HUD segíti az irányítást. A funkciók balról jobbra:
+•	Nyomvonal: Ki/be kapcsolhatjuk a rover útvonalának megjelenítését.
+•	Sebesség: A csúszkával tetszőlegesen állíthatjuk a szimuláció tempóját.
+•	Főmenü: Bármikor kiléphetünk; ekkor a szimuláció leáll, és a következő indításnál tiszta lappal indul.
+•	Lejátszás: Ezzel a gombbal indíthatjuk el a mozgást.
+•	Manuális léptetés: A [W] billentyű lenyomásával lépésenként is haladhatunk a szimulációban.
+A szimuláció közben megfigyelhető egy állapotjelző. Itt követhetjük az eltelt időt, az akkumulátor töltöttségét, a rover aktuális státuszát, a megtett távolságot és az összegyűjtött ásványok számát.
+A jobb oldalon találhatjuk a dashboardot. A fülre kattintva lenyithatjuk a részletes adatlapot, ahol minden lépés után percre kész információkat kapunk a történésekről.
+Amint a szimuláció véget ér, a "Lejátszás" gomb helyén két új opció jelenik meg:
+•	Log megnyitása: Megnyitja a korábban megadott helyre mentett részletes eseménynaplót.
+•	Újraindítás: Visszarepít a kezdőpontra a szimuláció újrafuttatásához.
