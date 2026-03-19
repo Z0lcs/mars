@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <None Remove="képek\Brit.png" />
+    <None Remove="képek\bázis.png" />
+    <None Remove="képek\bázis_roverrel.png" />
     <None Remove="képek\fal_talajon.png" />
     <None Remove="képek\Nyíl.jpg" />
     <None Remove="képek\ritkaarany_talajon.png" />
@@ -26,6 +28,12 @@
 
   <ItemGroup>
     <Resource Include="képek\Brit.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="képek\bázis.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="képek\bázis_roverrel.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
     <Resource Include="képek\fal_talajon.png">

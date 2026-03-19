@@ -108,7 +108,7 @@ namespace Vadász_Mars_Dénes
                     InicializalasMap();
                     EredmenyekElokeszitese(mentesiMappa);
 
-                    StatText.Text = "Kész! Indítsd el a lejátszást.";
+                    StatText.Text = "Kész! Nyomd meg a lejátszást \nvagy a 'W'-t hogy mozogjon a rover.";
                     AutoPlayGomb.Visibility = Visibility.Visible;
                 }
                 catch (Exception ex)
@@ -146,13 +146,17 @@ namespace Vadász_Mars_Dénes
 
         private ImageSource GetImageForSign(string sign, int x, int y)
         {
+            if (Terkep.KezdoPont.X == x && DénesRover.Pozicio.X == x && DénesRover.Pozicio.Y == y)
+            {
+                return GetCachedImage("bázis_roverrel.png");
+            }
             if (DénesRover.Pozicio.X == x && DénesRover.Pozicio.Y == y)
             {
                 return GetCachedImage("rover_egyenesben.png");
             }
             if (Terkep.KezdoPont.X == x && Terkep.KezdoPont.Y == y)
             {
-                return GetCachedImage("Brit.png");
+                return GetCachedImage("bázis.png");
             }
             return sign switch
             {
