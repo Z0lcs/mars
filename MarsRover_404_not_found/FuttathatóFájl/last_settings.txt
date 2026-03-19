@@ -1,0 +1,3 @@
+C:\mars\mars_map_50x50.csv
+C:\Users\arany\OneDrive\Asztali gép\teszt mappa
+24
