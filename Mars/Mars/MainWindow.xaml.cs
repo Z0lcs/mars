@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -56,6 +57,7 @@ namespace Vadász_Mars_Dénes
         private ChartValues<int> eBanyVals = new ChartValues<int> { 0, 0 }; // Éjjel
         private ChartValues<int> sikeresVals = new ChartValues<int> { 0, 0, 0 }; 
         private ChartValues<int> maradtVals = new ChartValues<int> { 0, 0, 0 };
+        private int maxOraErtek = 0; 
 
         public MainWindow()
         {
@@ -80,39 +82,39 @@ namespace Vadász_Mars_Dénes
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            SetupWindow beallitasok = new SetupWindow();
-
-            if (beallitasok.ShowDialog() == true)
+            string settingsFajl = "last_settings.txt";
+            if (File.Exists(settingsFajl))
             {
-                string mapFajl = beallitasok.KivalasztottMapPath;
-                string mentesiMappa = beallitasok.KivalasztottLogMappa;
-                int maxOra = beallitasok.MegadottMaxOra;
+                try
+                {
+                    string[] sorok = File.ReadAllLines(settingsFajl);
+                    string mapFajl = sorok[0];
+                    string mentesiMappa = sorok[1];
+                    int maxOra = int.Parse(sorok[2]);
+                    maxOraErtek = maxOra;
 
-                string teljesLogPath = Path.Combine(mentesiMappa, "rover_log.csv");
-                string teljesPathFile = Path.Combine(mentesiMappa, "rover_path.csv");
+                    Terkep = new MarsMap();
+                    Terkep.LoadFromFile(mapFajl);
 
-                Terkep = new MarsMap();
-                try { Terkep.LoadFromFile(mapFajl); }
-                catch { MessageBox.Show("Hiba a térkép betöltésekor!"); return; }
+                    string teljesLogPath = Path.Combine(mentesiMappa, "rover_log.csv");
+                    string teljesPathFile = Path.Combine(mentesiMappa, "rover_path.csv");
 
-                if (StatText != null) StatText.Text = "Szimuláció folyamatban...";
+                    RoverVezerlo vezerlo = new RoverVezerlo(Terkep, maxOra, teljesLogPath, false);
+                    vezerlo.SzimulacioInditasa();
 
-                RoverVezerlo vezerlo = new RoverVezerlo(Terkep, maxOra, teljesLogPath, false);
-                vezerlo.SzimulacioInditasa();
+                    BetoltLogEsUtvonal(teljesLogPath, teljesPathFile);
+                    DénesRover = new Rover { Pozicio = Terkep.KezdoPont };
 
-                BetoltLogEsUtvonal(teljesLogPath, teljesPathFile);
-                DénesRover = new Rover { Pozicio = Terkep.KezdoPont };
-                InicializalasMap();
+                    InicializalasMap();
+                    EredmenyekElokeszitese(mentesiMappa);
 
-                EredmenyekElokeszitese(mentesiMappa);
-
-                if (StatText != null) StatText.Text = "Betöltés kész! Kattints a Lejátszásra vagy nyomd a 'W'-t.";
-
-                if (AutoPlayGomb != null) AutoPlayGomb.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                Application.Current.Shutdown();
+                    StatText.Text = "Kész! Indítsd el a lejátszást.";
+                    AutoPlayGomb.Visibility = Visibility.Visible;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Hiba a betöltéskor: " + ex.Message);
+                }
             }
         }
 
@@ -144,13 +146,20 @@ namespace Vadász_Mars_Dénes
 
         private ImageSource GetImageForSign(string sign, int x, int y)
         {
-            if (DénesRover.Pozicio.X == x && DénesRover.Pozicio.Y == y) return GetCachedImage("Nyíl.jpg");
+            if (DénesRover.Pozicio.X == x && DénesRover.Pozicio.Y == y)
+            {
+                return GetCachedImage("rover_egyenesben.png");
+            }
+            if (Terkep.KezdoPont.X == x && Terkep.KezdoPont.Y == y)
+            {
+                return GetCachedImage("Brit.png");
+            }
             return sign switch
             {
                 "Y" => GetCachedImage("ritkaarany_talajon.png"),
                 "B" => GetCachedImage("vízjég_talajon.png"),
                 "G" => GetCachedImage("ritkaasvany_talajon.png"),
-                "#" => GetCachedImage("Brit.png"),
+                "#" => GetCachedImage("fal_talajon.png"),
                 _ => GetCachedImage("talaj.png")
             };
         }
@@ -164,7 +173,15 @@ namespace Vadász_Mars_Dénes
 
         private async void AutoPlay_Click(object sender, RoutedEventArgs e)
         {
-            autoLejatszas = !autoLejatszas;
+            if (aktualisLogIndex >= szimulaciosLog.Count)
+            {
+                ResetSzimulacio(); // Mindent alaphelyzetbe állítunk
+                autoLejatszas = false;
+            }
+            else
+            {
+                autoLejatszas = !autoLejatszas;
+            }
 
             if (autoLejatszas)
             {
@@ -174,15 +191,17 @@ namespace Vadász_Mars_Dénes
                 while (autoLejatszas && aktualisLogIndex < szimulaciosLog.Count)
                 {
                     await EgyLepesMegtetele();
-                    await Task.Delay(500); 
+
+                    int dinamikusDelay = (int)(200 / speedSlider.Value);
+                    await Task.Delay(dinamikusDelay);
                 }
 
                 if (aktualisLogIndex >= szimulaciosLog.Count)
                 {
-                    AutoPlayGomb.Content = "Kész";
-                    AutoPlayGomb.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00FF00"));
-                    AutoPlayGomb.IsEnabled = false;
+                    AutoPlayGomb.Content = "🔄 Újraindítás";
+                    AutoPlayGomb.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3498DB"));
                     autoLejatszas = false;
+                    LogMegnyitasGomb.Visibility = Visibility.Visible;
                 }
             }
             else
@@ -192,11 +211,105 @@ namespace Vadász_Mars_Dénes
             }
         }
 
+        private void ResetSzimulacio()
+        {
+            aktualisLogIndex = 0;
+            aktualisUtvonalIndex = 0;
+            folyamatban = false;
+
+            DénesRover.Pozicio = Terkep.KezdoPont;
+            
+            LogMegnyitasGomb.Visibility = Visibility.Collapsed;
+
+            string settingsFajl = "last_settings.txt";
+            if (File.Exists(settingsFajl))
+            {
+                string[] sorok = File.ReadAllLines(settingsFajl);
+                Terkep.LoadFromFile(sorok[0]); // Újraolvassuk az eredeti CSV-t
+                string mentesiMappa = sorok[1];
+
+                akkuPts.Clear();
+                asvanyPts.Clear();
+                asvanyPts.Add(new ObservablePoint(0, 0)); // Kezdőpont az ásványnak
+                akkuPts.Add(new ObservablePoint(0, 100)); // Kezdőpont az akkunak
+
+                sebessegVals[0] = 0; sebessegVals[1] = 0; sebessegVals[2] = 0;
+                haladasVal[0] = 0;
+                banyaszatVal[0] = 0;
+                hazaVal[0] = 0;
+                nBanyVals[0] = 0; nBanyVals[1] = 0;
+                eBanyVals[0] = 0; eBanyVals[1] = 0;
+
+                EredmenyekElokeszitese(mentesiMappa);
+
+                InicializalasMap();
+            }
+        }
+
+        private void FrissitAutoPlayGombAllapot()
+        {
+            if (aktualisLogIndex >= szimulaciosLog.Count)
+            {
+                AutoPlayGomb.Content = "🔄 Újraindítás";
+                AutoPlayGomb.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3498DB"));
+                autoLejatszas = false;
+
+                LogMegnyitasGomb.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                LogMegnyitasGomb.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void Back_Click(object sender, RoutedEventArgs e)
+        {
+            autoLejatszas = false;
+
+            SetupWindow setupAblak = new SetupWindow();
+
+            setupAblak.Show();
+
+            this.Close();
+        }
+
+        private void LogMegnyitas_Click(object sender, RoutedEventArgs e)
+        {
+            string settingsFajl = "last_settings.txt";
+            if (File.Exists(settingsFajl))
+            {
+                string[] sorok = File.ReadAllLines(settingsFajl);
+                string mentesiMappa = sorok[1];
+                string teljesLogPath = Path.Combine(mentesiMappa, "rover_log.csv");
+
+                if (File.Exists(teljesLogPath))
+                {
+                    try
+                    {
+                        // Megnyitja a fájlt az alapértelmezett programmal
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(teljesLogPath) { UseShellExecute = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Nem sikerült megnyitni a log fájlt: " + ex.Message);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("A log fájl nem található a megadott helyen.");
+                }
+            }
+        }
+
         private async void MainWindow_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.W && !autoLejatszas)
             {
-                await EgyLepesMegtetele();
+                if (aktualisLogIndex < szimulaciosLog.Count)
+                {
+                    await EgyLepesMegtetele();
+                    FrissitAutoPlayGombAllapot();
+                }
             }
         }
 
@@ -207,6 +320,21 @@ namespace Vadász_Mars_Dénes
 
             var sor = szimulaciosLog[aktualisLogIndex];
             int seb = int.Parse(sor[5]);
+            string napszak = sor.Length > 9 ? sor[9].Trim() : "Nappal";
+
+            // --- NAPSZAK VIZUÁLIS JELZÉSE ---
+            if (napszak == "Nappal")
+            {
+                NapszakIndikator.Fill = Brushes.Yellow;
+                NapszakSzoveg.Text = "☀️ NAPPAL";
+                NapszakSzoveg.Foreground = Brushes.Yellow;
+            }
+            else
+            {
+                NapszakIndikator.Fill = Brushes.DarkBlue;
+                NapszakSzoveg.Text = "🌙 ÉJJEL";
+                NapszakSzoveg.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A9CCE3"));
+            }
 
             if (sor[8] == "Bányászat")
             {
@@ -231,7 +359,9 @@ namespace Vadász_Mars_Dénes
                     DénesRover.Pozicio = utvonalPontok[aktualisUtvonalIndex++];
                     FrissitCella(regi.X, regi.Y);
                     FrissitCella(DénesRover.Pozicio.X, DénesRover.Pozicio.Y);
-                    await Task.Delay(500);
+
+                    // Dinamikus késleltetés a robot mozgásához (Alap: 500ms)
+                    await Task.Delay((int)(500 / speedSlider.Value));
                 }
             }
 
@@ -248,7 +378,6 @@ namespace Vadász_Mars_Dénes
             if (seb >= 1 && seb <= 3) sebessegVals[seb - 1]++;
 
             string statusz = sor[8];
-            string napszak = sor.Length > 9 ? sor[9].Trim() : "";
 
             if (statusz == "Bányászat")
             {
@@ -259,7 +388,7 @@ namespace Vadász_Mars_Dénes
             else hazaVal[0]++;
 
             if (StatText != null)
-                StatText.Text = $"Idő: {sor[1]} | Akku: {sor[4]}% | Státusz: {sor[8]} \nTávolság: {sor[6]} blokk  | Ásványok: {sor[7]}db";
+                StatText.Text = $"Idő: {sor[1]} / {maxOraErtek}:00 | Akku: {sor[4]}% | Státusz: {sor[8]} \nMegtett távolság: {sor[6]} blokk  | Ásványok: {sor[7]}db";
 
             aktualisLogIndex++;
             folyamatban = false;
@@ -293,12 +422,12 @@ namespace Vadász_Mars_Dénes
                 StatuszSeries.Add(new PieSeries { Title = "Haza", Values = hazaVal, DataLabels = true, LabelPoint = pieLabel });
 
                 SebessegSeries.Clear();
-                SebessegSeries.Add(new ColumnSeries { Title = "Gyakoriság", Values = sebessegVals, DataLabels = true, LabelPoint = p => p.Y.ToString() });
+                SebessegSeries.Add(new ColumnSeries { Title = "Gyakoriság", Values = sebessegVals, DataLabels = true, LabelPoint = p => p.Y.ToString(), LabelsPosition = BarLabelPosition.Parallel, Foreground = Brushes.White });
 
-                NapszakSeries.Clear();
+                NapszakSeries.Clear();  
                 NapszakSeries.Add(new StackedColumnSeries { Title = "Nappal", Values = nBanyVals, DataLabels = true, LabelPoint = p => p.Y > 0 ? p.Y.ToString() : ""});
                 NapszakSeries.Add(new StackedColumnSeries { Title = "Éjjel", Values = eBanyVals, DataLabels = true, LabelPoint = p => p.Y > 0 ? p.Y.ToString() : ""});
-
+                    
                 string sumFajl = Path.Combine(mappa, "rover_summary.csv");
                 if (File.Exists(sumFajl))
                 {
@@ -315,17 +444,12 @@ namespace Vadász_Mars_Dénes
                         maradtVals.Clear(); maradtVals.AddRange(new int[] { oV, oA, oR });
 
                         TeljesitmenySeries.Clear();
-                        TeljesitmenySeries.Add(new RowSeries { Title = "Sikeres", Values = sikeresVals, DataLabels = true, LabelPoint = p => p.X.ToString()});
-                        TeljesitmenySeries.Add(new RowSeries { Title = "Veszteség", Values = maradtVals, DataLabels = true, LabelPoint = p => p.X.ToString()});
+                        TeljesitmenySeries.Add(new RowSeries { Title = "Begyűjtött", Values = sikeresVals, DataLabels = true, LabelPoint = p => p.X.ToString(),LabelsPosition = BarLabelPosition.Parallel});
+                        TeljesitmenySeries.Add(new RowSeries { Title = "Maradék", Values = maradtVals, DataLabels = true, LabelPoint = p => p.X.ToString(), LabelsPosition = BarLabelPosition.Parallel, Foreground = Brushes.White });
                     }
                 }
             }
             catch (Exception ex) { MessageBox.Show("Hiba a dashboard előkészítésekor: " + ex.Message); }
-        }
-
-        private void CartesianChart_Loaded(object sender, RoutedEventArgs e)
-        {
-
         }
     }
 }

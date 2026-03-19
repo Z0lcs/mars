@@ -88,7 +88,7 @@ namespace Vadász_Mars_Dénes
 
             if (!int.TryParse(TimeTextBox.Text, out int orak) || orak < 24)
             {
-                MessageBox.Show("Az időkorlátnak legalább 24 órának kell lennie (csak egész számot írj be)!", "Hiba", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Az időkorlátnak legalább 24 órának kell lennie!", "Hiba", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -103,8 +103,23 @@ namespace Vadász_Mars_Dénes
             KivalasztottLogMappa = LogFolderPathTextBox.Text;
             MegadottMaxOra = orak;
 
-            this.DialogResult = true;
+            // MODOSÍTÁS: MainWindow megnyitása és SetupWindow bezárása
+            MainWindow foAblak = new MainWindow();
+            foAblak.Show();
+
             this.Close();
+        }
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            var valasz = MessageBox.Show("Biztosan be akarod zárni a Mars-szimulációt?",
+                                         "Kilépés",
+                                         MessageBoxButton.YesNo,
+                                         MessageBoxImage.Question);
+
+            if (valasz == MessageBoxResult.Yes)
+            {
+                Application.Current.Shutdown(); 
+            }
         }
     }
 }

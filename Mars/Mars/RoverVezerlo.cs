@@ -19,6 +19,9 @@ namespace Vadász_Mars_Dénes
         private bool menekulesAktiv = false;
         private int lepesSzamlalo = 0;
 
+        private bool[,] akadalyMatrix;
+        private int[,] tavolsagokBazistol;
+
         private int kezdetiVizjeg;
         private int kezdetiArany;
         private int kezdetiRitka;
@@ -36,8 +39,55 @@ namespace Vadász_Mars_Dénes
             this.kezdetiRitka = terkep.RitkaAsvany.Count;
             this.kezdetiOsszes = kezdetiVizjeg + kezdetiArany + kezdetiRitka;
 
+            akadalyMatrix = new bool[50, 50];
+            foreach (var a in terkep.Akadalyok)
+            {
+                if (a.X >= 0 && a.X < 50 && a.Y >= 0 && a.Y < 50)
+                {
+                    akadalyMatrix[a.X, a.Y] = true;
+                }
+            }
+
+            tavolsagokBazistol = BfsMindenTavolsag(terkep.KezdoPont);
+
             this.kijelzo = new Megjelenito(logPath, maxOra, konzolraIr);
             File.WriteAllText(logPath, "Taktus;Ido;Start_Poz;Cel_Poz;Akku;Sebesseg;Ossz_Tav;Asvanyok;Statusz;Napszak\n");
+        }
+
+        private int[,] BfsMindenTavolsag(Point start)
+        {
+            int[,] dist = new int[50, 50];
+            for (int i = 0; i < 50; i++)
+                for (int j = 0; j < 50; j++)
+                    dist[i, j] = 9999;
+
+            Queue<(int X, int Y, int D)> q = new Queue<(int, int, int)>();
+            q.Enqueue((start.X, start.Y, 0));
+            dist[start.X, start.Y] = 0;
+
+            int[] dx = { -1, 0, 1, -1, 1, -1, 0, 1 };
+            int[] dy = { -1, -1, -1, 0, 0, 1, 1, 1 };
+
+            while (q.Count > 0)
+            {
+                var curr = q.Dequeue();
+
+                for (int i = 0; i < 8; i++)
+                {
+                    int nx = curr.X + dx[i];
+                    int ny = curr.Y + dy[i];
+
+                    if (nx >= 0 && nx < 50 && ny >= 0 && ny < 50)
+                    {
+                        if (!akadalyMatrix[nx, ny] && dist[nx, ny] == 9999)
+                        {
+                            dist[nx, ny] = curr.D + 1;
+                            q.Enqueue((nx, ny, curr.D + 1));
+                        }
+                    }
+                }
+            }
+            return dist;
         }
 
         public void SzimulacioInditasa()
@@ -53,26 +103,117 @@ namespace Vadász_Mars_Dénes
                 int sebessegMod = 1;
                 Point celpont = terkep.KezdoPont;
 
+                int[,] tavolsagokAktol = BfsMindenTavolsag(rover.Pozicio);
+                double hatralevoPerc = (maxOra * 60) - ido.ElteltPerc;
+
                 var asvanyok = GetAsvanyok();
 
-                // --- VÉSZHELYZET VIZSGÁLATA ---
-                int tavBazisig = Tavolsag(rover.Pozicio, terkep.KezdoPont);
-                double hatralevoPerc = (maxOra * 60) - ido.ElteltPerc;
+                var elerhetoAsvanyok = asvanyok.Where(a =>
+                {
+                    if (tavolsagokAktol[a.X, a.Y] >= 9999) return false;
+                    double minTavIdo = ((tavolsagokAktol[a.X, a.Y] + tavolsagokBazistol[a.X, a.Y]) * 15.0) + 30.0;
+                    return minTavIdo <= hatralevoPerc;
+                }).ToList();
+
+                int tavBazisig = tavolsagokAktol[terkep.KezdoPont.X, terkep.KezdoPont.Y];
+
+                double simAkkuAkt = rover.Akkumulator;
+                double legkisebbSzint = rover.Akkumulator;
+                int simPerc = ido.ElteltPerc;
+                int hatralevoTav = tavBazisig;
+
+                while (hatralevoTav > 0)
+                {
+                    double simOra = (simPerc / 60.0) % 24;
+                    bool simNappal = simOra < 16.0;
+
+                    int maxSeb = 1;
+                    if (simNappal)
+                    {
+                        if (simOra >= 13.0 && simOra < 16.0 && simAkkuAkt < 90) maxSeb = 1;
+                        else if (simAkkuAkt >= 20) maxSeb = 3;
+                        else if (simAkkuAkt >= 8) maxSeb = 2;
+                    }
+                    else
+                    {
+                        if (simAkkuAkt >= 60) maxSeb = 2;
+                    }
+
+                    int lepes = Math.Min(hatralevoTav, maxSeb);
+
+                    double fogy = 2 * Math.Pow(lepes, 2);
+                    if (simNappal) fogy -= 10;
+
+                    simAkkuAkt -= fogy;
+                    if (simAkkuAkt > 100) simAkkuAkt = 100;
+                    if (simAkkuAkt < legkisebbSzint) legkisebbSzint = simAkkuAkt;
+
+                    simPerc += 30;
+                    hatralevoTav -= lepes;
+                }
+
+                double deficit = rover.Akkumulator - legkisebbSzint;
+                //double biztonsagiAkku = Math.Max(12.0, deficit + 10.0);
+                double biztonsagiAkku = Math.Max(5.0, deficit + 2.0);
+
+                // 60 perc helyett csak 0 vagy maximum 30 perc (1 lépés) puffert hagyunk
+                double szuksegesIdo = (simPerc - ido.ElteltPerc) + 0.0;
+                bool idoFogy = (hatralevoPerc <= szuksegesIdo);
 
                 if (!menekulesAktiv)
                 {
-                    //bool kellMenekulni = ((tavBazisig * 12.0) >= (hatralevoPerc - 60)) || (rover.Akkumulator < 30);
-                    bool kellMenekulni = ((tavBazisig * 11.0) >= (hatralevoPerc - 30)) || (rover.Akkumulator < 25);
-                    if (kellMenekulni || !asvanyok.Any())
+                    if (idoFogy || (rover.Akkumulator < biztonsagiAkku) || !elerhetoAsvanyok.Any())
                     {
                         menekulesAktiv = true;
                     }
                 }
+                else
+                {
+                    if (rover.Pozicio != terkep.KezdoPont &&
+                        nappal &&
+                        (hatralevoPerc > szuksegesIdo + 30) && //90 volt
+                        (rover.Akkumulator >= biztonsagiAkku + 5) && // 10 volt
+                        elerhetoAsvanyok.Any())
+                    {
+                        menekulesAktiv = false;
+                    }
+                }
 
-                if (rover.Pozicio == terkep.KezdoPont && menekulesAktiv && taktus > 1) break;
+                if (rover.Pozicio == terkep.KezdoPont && menekulesAktiv && taktus > 1)
+                {
+                    if (elerhetoAsvanyok.Any())
+                    {
+                        var cel = elerhetoAsvanyok.OrderBy(a => tavolsagokBazistol[a.X, a.Y]).First();
+                        int tavCelhoz = tavolsagokBazistol[cel.X, cel.Y];
+                        double szuksegesAktivAkku = (tavCelhoz * 2.0 * 2) + 15.0;
+
+                        if (rover.Akkumulator < szuksegesAktivAkku && rover.Akkumulator < 95)
+                        {
+                            if (rover.Akkumulator <= 2 && !nappal) break;
+
+                            aktualisStatusz = "Töltés";
+                            rover.FrissitEnergia(rover.SzamolFogyasztas(0, nappal, false));
+                            ido.IdoUgras(30);
+                            kijelzo.LogEsKiir(taktus, ido, induloPoz, rover.Pozicio, 0, aktualisStatusz, nappal, rover, osszesTavolsag);
+                            continue;
+                        }
+                        else
+                        {
+                            menekulesAktiv = false;
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                bool tudBanyaszniVeszhelyzetben = menekulesAktiv &&
+                                                  (rover.Akkumulator > biztonsagiAkku + 2.0) &&
+                                                  (hatralevoPerc > szuksegesIdo + 30.0);
 
                 // --- DÖNTÉSHOZATAL ---
-                if (asvanyok.Any(a => a.X == rover.Pozicio.X && a.Y == rover.Pozicio.Y) && !menekulesAktiv)
+                if (asvanyok.Any(a => a.X == rover.Pozicio.X && a.Y == rover.Pozicio.Y) && (!menekulesAktiv || tudBanyaszniVeszhelyzetben))
                 {
                     aktualisStatusz = "Bányászat";
                     rover.OsszegyujtottAsvany++;
@@ -89,7 +230,7 @@ namespace Vadász_Mars_Dénes
                 {
                     if (!menekulesAktiv)
                     {
-                        celpont = ValasztCelpont(rover.Pozicio, asvanyok);
+                        celpont = ValasztCelpont(rover.Pozicio, elerhetoAsvanyok, tavolsagokAktol);
                         aktualisStatusz = "Haladás";
                     }
                     else
@@ -98,7 +239,9 @@ namespace Vadász_Mars_Dénes
                         aktualisStatusz = "VÉSZ-HAZATÉRÉS";
                     }
 
-                    sebessegMod = ValasztSebesseg(rover, celpont, nappal, menekulesAktiv);
+                    int valosTavolsag = tavolsagokAktol[celpont.X, celpont.Y];
+                    sebessegMod = ValasztSebesseg(rover, celpont, nappal, menekulesAktiv, valosTavolsag, biztonsagiAkku);
+
                     double lepes = MozgasVegrehajtas(celpont, sebessegMod);
 
                     if (lepes > 0) osszesTavolsag += lepes;
@@ -106,104 +249,163 @@ namespace Vadász_Mars_Dénes
                     rover.FrissitEnergia(rover.SzamolFogyasztas(sebessegMod, nappal, false));
                     ido.IdoUgras(30);
 
+                    if (celpont == terkep.KezdoPont && rover.Pozicio == terkep.KezdoPont)
+                    {
+                        aktualisStatusz = "HAZAÉRT / Bázison";
+                    }
+
                     int kiirtSebesseg = (lepes > 0) ? (int)lepes : sebessegMod;
                     kijelzo.LogEsKiir(taktus, ido, induloPoz, rover.Pozicio, kiirtSebesseg, aktualisStatusz, nappal, rover, osszesTavolsag);
                 }
 
                 if (rover.Akkumulator <= 0) break;
             }
-            int maradekVizjeg = terkep.Vizjeg.Count;
-            int maradekArany = terkep.RitkaArany.Count;
-            int maradekRitka = terkep.RitkaAsvany.Count;
 
-            // 2. A különbség adja meg a begyűjtött mennyiséget fajtánként
-            int gyujtottVizjeg = kezdetiVizjeg - maradekVizjeg;
-            int gyujtottArany = kezdetiArany - maradekArany;
-            int gyujtottRitka = kezdetiRitka - maradekRitka;
-
-            // 3. Eredmény kiírása a konzolra
-            kijelzo.KiirEredmeny(rover, terkep, osszesTavolsag);
-
-            // 4. A 3. fájl (Összegzés) legenerálása
             kijelzo.LogOsszegzes(ido.ElteltPerc, (ido.MaxOra * 60), osszesTavolsag,
-                                 gyujtottVizjeg, kezdetiVizjeg,
-                                 gyujtottArany, kezdetiArany,
-                                 gyujtottRitka, kezdetiRitka,
+                                 kezdetiVizjeg - terkep.Vizjeg.Count, kezdetiVizjeg,
+                                 kezdetiArany - terkep.RitkaArany.Count, kezdetiArany,
+                                 kezdetiRitka - terkep.RitkaAsvany.Count, kezdetiRitka,
                                  rover.OsszegyujtottAsvany, kezdetiOsszes);
             kijelzo.KiirEredmeny(rover, terkep, osszesTavolsag);
         }
 
-        // --- Belső logikai segédfüggvények ---
-            
-        private Point ValasztCelpont(Point akt, List<Point> asvanyok)
-        {
-            var szomszed = asvanyok.FirstOrDefault(a => Tavolsag(a, akt) <= 1);
-            if (szomszed != new Point(0, 0)) return szomszed;
+        // --- CÉLPONT ÉS MOZGÁS ---
 
-            return asvanyok.OrderBy(a =>
+        private Point ValasztCelpont(Point akt, List<Point> elerhetoAsvanyok, int[,] tavMatrix)
+        {
+            if (!elerhetoAsvanyok.Any()) return terkep.KezdoPont;
+
+            // --- TUNING PARAMÉTEREK (Ideális értékek teszteléséhez) ---
+
+            // 1. A Porszívó: Milyen távolságon belül szedjen fel azonnal mindent, gondolkodás nélkül? (Alap: 3)
+            int porszivoSugar = 3;
+
+            // 2. Távolság büntetése: Kisebb szám = bátrabban indul el messzire az elején. (Alap: 5.0)
+            double tavolsagBuntetes = 5.0;
+
+            // 3. Sűrűség vizsgálata: Mekkora körzetben számolja a szomszédos ásványokat egy célpont körül? (Alap: 3)
+            int surusegSugar = 3;
+
+            // 4. Sűrűség jutalma: Nagyobb szám = jobban vonzzák a nagy kupacok, akár távolabb is. (Alap: 5.0)
+            double surusegJutalom = 5.0;
+
+            // 5. Hazahúzás ereje: Milyen erősen vonzza a bázis a szimuláció vége felé? (Alap: 25.0)
+            double hazaHuzasSzorzo = 25.0;
+
+            // 6. Hazahúzás görbéje: Magasabb szám (pl. 4) esetén sokáig kint marad, és csak az utolsó pillanatban kezd el durván hazahúzni. (Alap: 3.0)
+            double hazaHuzasHatvany = 3.0;
+            // -----------------------------------------------------------
+
+            var kornyezet = elerhetoAsvanyok.Where(a => tavMatrix[a.X, a.Y] <= porszivoSugar).ToList();
+            if (kornyezet.Any())
             {
-                double tav = Tavolsag(a, akt);
-                int suruseg = asvanyok.Count(m => Tavolsag(m, a) <= 2);
-                return tav - (suruseg * 0.725);
+                return kornyezet.OrderBy(a => tavMatrix[a.X, a.Y]).First();
+            }
+
+            double progress = (double)ido.ElteltPerc / (maxOra * 60.0);
+            double hazaHuzas = Math.Pow(progress, hazaHuzasHatvany) * hazaHuzasSzorzo;
+
+            return elerhetoAsvanyok.OrderBy(a =>
+            {
+                double tavAktol = tavMatrix[a.X, a.Y];
+                double tavBazistol = tavolsagokBazistol[a.X, a.Y];
+                int suruseg = elerhetoAsvanyok.Count(m => Tavolsag(m, a) <= surusegSugar);
+
+                return (tavAktol * tavolsagBuntetes) - (suruseg * surusegJutalom) + (tavBazistol * hazaHuzas);
             }).First();
         }
 
-        private int ValasztSebesseg(Rover r, Point cel, bool nappal, bool vesz)
+        private int ValasztSebesseg(Rover r, Point cel, bool nappal, bool vesz, int valosTavolsag, double biztonsagiAkku)
         {
             int maxSeb = 1;
+            double aktualisOra = (ido.ElteltPerc / 60.0) % 24;
 
             if (vesz)
             {
-                if (r.Akkumulator > 35) maxSeb = 3;
-                else if (r.Akkumulator > 15) maxSeb = 2;
-                else maxSeb = 1;
+                if (nappal)
+                {
+                    if (r.Akkumulator > biztonsagiAkku + 15) maxSeb = 3;
+                    else if (r.Akkumulator > biztonsagiAkku + 5) maxSeb = 2;
+                    else maxSeb = 1;
+                }
+                else
+                {
+                    if (r.Akkumulator > biztonsagiAkku + 10) maxSeb = 2;
+                    else maxSeb = 1;
+                }
             }
             else
             {
-                if (nappal && r.Akkumulator > 30) maxSeb = 3;
-                else if (r.Akkumulator > 15) maxSeb = 2;
-                else maxSeb = 1;
+                if (nappal)
+                {
+                    if (aktualisOra >= 13.0 && aktualisOra < 16.0 && r.Akkumulator < 90) maxSeb = 1;
+                    else if (r.Akkumulator >= 20) maxSeb = 3;
+                    else if (r.Akkumulator >= 8) maxSeb = 2;
+                }
+                else
+                {
+                    if (r.Akkumulator >= 60) maxSeb = 3;
+                    else if (r.Akkumulator >= 30) maxSeb = 2;
+                    else maxSeb = 1;
+                }
             }
 
-            return Math.Min(Tavolsag(r.Pozicio, cel), maxSeb);
+            return Math.Min(valosTavolsag, maxSeb);
         }
 
         private double MozgasVegrehajtas(Point cel, int seb)
         {
             double megtett = 0;
+            if (rover.Pozicio == cel) return 0;
+
+            int[,] tavolsagCeltol = BfsMindenTavolsag(cel);
+
             for (int i = 0; i < seb; i++)
             {
                 if (rover.Pozicio == cel) break;
-                Point kov = KeresLegjobbSzomszed(rover.Pozicio, cel);
+
+                Point kov = KeresLegjobbSzomszed(rover.Pozicio, cel, tavolsagCeltol);
                 if (kov != rover.Pozicio)
                 {
                     rover.Pozicio = kov;
                     megtett++;
-
                     lepesSzamlalo++;
                     kijelzo.LogLepes(lepesSzamlalo, rover.Pozicio);
                 }
+                else break;
             }
             return megtett;
         }
 
         private int Tavolsag(Point p1, Point p2) => Math.Max(Math.Abs(p1.X - p2.X), Math.Abs(p1.Y - p2.Y));
 
-        private Point KeresLegjobbSzomszed(Point akt, Point cel)
+        private Point KeresLegjobbSzomszed(Point akt, Point cel, int[,] tavolsagCeltol)
         {
             Point legjobb = akt;
-            double min = double.MaxValue;
-            for (int dx = -1; dx <= 1; dx++)
-                for (int dy = -1; dy <= 1; dy++)
+            int minTav = int.MaxValue;
+            double minEuklideszi = double.MaxValue;
+
+            int[] dx = { -1, 0, 1, -1, 1, -1, 0, 1 };
+            int[] dy = { -1, -1, -1, 0, 0, 1, 1, 1 };
+
+            for (int i = 0; i < 8; i++)
+            {
+                int nx = akt.X + dx[i];
+                int ny = akt.Y + dy[i];
+
+                if (nx >= 0 && nx < 50 && ny >= 0 && ny < 50 && !akadalyMatrix[nx, ny])
                 {
-                    if (dx == 0 && dy == 0) continue;
-                    Point v = new Point(akt.X + dx, akt.Y + dy);
-                    if (v.X >= 0 && v.X < 50 && v.Y >= 0 && v.Y < 50 && !terkep.Akadalyok.Any(a => a.X == v.X && a.Y == v.Y))
+                    int t = tavolsagCeltol[nx, ny];
+                    double euklideszi = Math.Sqrt(Math.Pow(nx - cel.X, 2) + Math.Pow(ny - cel.Y, 2));
+
+                    if (t < minTav || (t == minTav && euklideszi < minEuklideszi))
                     {
-                        double t = Tavolsag(v, cel);
-                        if (t < min) { min = t; legjobb = v; }
+                        minTav = t;
+                        minEuklideszi = euklideszi;
+                        legjobb = new Point(nx, ny);
                     }
                 }
+            }
             return legjobb;
         }
 

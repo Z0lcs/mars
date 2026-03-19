@@ -25,5 +25,10 @@ namespace Vadász_Mars_Dénes
             double ora = ElteltPerc / 60.0;
             return $"Idő: {ora:F1} óra | {(NappalVanE() ? "Nappal" : "Éjszaka")}";
         }
+
+        public string Ora()
+        {
+            return MaxOra.ToString();
+        }
     }
 }
