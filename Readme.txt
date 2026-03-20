@@ -1,4 +1,3 @@
-Adatok:
 
 Csapat név: 404 not found
 Csapattagok nevei: Arany Zoltán, Herczeg Ákos, Szanics Ferenc
@@ -15,7 +14,8 @@ Célplatform: Windows (WPF Application)
 
 Program használati útmutatója:
 
-Első lépésként adjuk meg a térképet .csv formátumban. Válasszuk ki a mappa helyét, ahová a program a log-fájlokat menti (eseménynapló, dashboard adatok, rover útvonala). Emellett állítsuk be a szimuláció hosszát, majd indítsuk el a folyamatot.
+A program a FuttathatóFájl nevű mappában található Mars.exe néven. Inditsuk el az exe-t.
+Utána első lépésként adjuk meg a térképet .csv formátumban. Válasszuk ki a mappa helyét, ahová a program a log-fájlokat menti (eseménynapló, dashboard adatok, rover útvonala). Emellett állítsuk be a szimuláció hosszát, majd indítsuk el a folyamatot.
 
 A képernyőn a térkép mellett egy HUD segíti az irányítást. A funkciók balról jobbra:
 •	Nyomvonal: Ki/be kapcsolhatjuk a rover útvonalának megjelenítését.
